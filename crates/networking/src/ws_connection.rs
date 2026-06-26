@@ -53,7 +53,8 @@ impl WsConnection {
 #[async_trait]
 impl Connection for WsConnection {
     async fn send(&self, message: &Message) -> Result<(), NetworkError> {
-        let json = serde_json::to_string(message).map_err(NetworkError::Serialisation)?;
+        let envelope = dos_protocol::Envelope::new(message.clone());
+        let json = serde_json::to_string(&envelope).map_err(NetworkError::Serialisation)?;
         let mut sink = self.sink.lock().await;
         sink.send(WsMsg::Text(json))
             .await
@@ -64,9 +65,9 @@ impl Connection for WsConnection {
         let mut stream = self.stream.lock().await;
         match stream.next().await {
             Some(Ok(WsMsg::Text(text))) => {
-                let msg = serde_json::from_str(&text)
+                let envelope: dos_protocol::Envelope = serde_json::from_str(&text)
                     .map_err(|e| NetworkError::Deserialisation(e.to_string()))?;
-                Ok(Some(msg))
+                Ok(Some(envelope.message))
             }
             Some(Ok(WsMsg::Close(_))) | None => {
                 self.connected.store(false, Ordering::Relaxed);
