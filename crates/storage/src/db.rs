@@ -19,9 +19,18 @@ impl Database {
     /// # Errors
     /// Returns [`StorageError`] if the database cannot be opened or migrations fail.
     pub async fn open(path: &str) -> Result<Self, StorageError> {
-        let pool = SqlitePool::connect(path).await.map_err(StorageError::Sqlx)?;
+        use sqlx::sqlite::SqliteConnectOptions;
+        
+        // Remove "sqlite:" prefix if present to get raw file path
+        let raw_path = path.strip_prefix("sqlite:").unwrap_or(path);
+        
+        let options = SqliteConnectOptions::new()
+            .filename(raw_path)
+            .create_if_missing(true);
+            
+        let pool = SqlitePool::connect_with(options).await.map_err(StorageError::Sqlx)?;
         sqlx::migrate!("../../migrations").run(&pool).await.map_err(StorageError::Migration)?;
-        info!(path, "database opened and migrations applied");
+        info!(path = %raw_path, "database opened and migrations applied");
         Ok(Self { pool })
     }
 
