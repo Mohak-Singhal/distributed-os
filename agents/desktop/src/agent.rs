@@ -132,7 +132,7 @@ impl Agent {
             Message::PairRequest(req) => {
                 info!("Pairing request received from {} with code {}", req.from, req.pair_code);
                 // Auto-accept for now in v0.1
-                let msg = dos_protocol::builder::pair_accept(NodeId(self.identity.node_id), "Desktop Agent", "0000");
+                let msg = dos_protocol::builder::pair_accept(NodeId(self.identity.node_id), req.from, "Desktop Agent", "0000");
                 if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
                     tx.send(json).ok();
                 }

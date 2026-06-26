@@ -311,6 +311,7 @@ name = "dos-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "chrono",
  "dos-common",
  "dos-core",
  "dos-crypto",

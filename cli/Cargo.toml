@@ -25,3 +25,4 @@ tokio-tungstenite = { workspace = true }
 futures-util = { workspace = true }
 uuid         = { workspace = true }
 serde_json   = { workspace = true }
+chrono       = { workspace = true }

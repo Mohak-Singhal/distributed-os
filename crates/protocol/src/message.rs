@@ -35,6 +35,8 @@ pub struct HeartbeatPayload {
 pub struct PairRequest {
     /// The requesting node's ID.
     pub from: NodeId,
+    /// The target node's ID to pair with.
+    pub to: NodeId,
     /// Human-readable name of the requesting node.
     pub name: String,
     /// Hex-encoded ed25519 public key of the requesting node.
@@ -50,6 +52,8 @@ pub struct PairRequest {
 pub struct PairResponse {
     /// The responding node's ID.
     pub from: NodeId,
+    /// The requesting node's ID (to send the response to).
+    pub to: NodeId,
     /// Human-readable name of the responding node.
     pub name: String,
     /// Hex-encoded ed25519 public key of the responding node.

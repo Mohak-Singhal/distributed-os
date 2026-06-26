@@ -144,7 +144,7 @@ async fn dispatch(text: &str, from: NodeId, registry: &Arc<Registry>, tx: &NodeT
 
         Message::PairRequest(ref req) => {
             // Forward to target if specified; otherwise send error
-            if let Some(target_tx) = registry.get_tx(req.from).await {
+            if let Some(target_tx) = registry.get_tx(req.to).await {
                 send_msg(&target_tx, envelope.message);
             } else {
                 send_error(tx, "target_offline", "target node is not connected");
@@ -152,7 +152,7 @@ async fn dispatch(text: &str, from: NodeId, registry: &Arc<Registry>, tx: &NodeT
         }
 
         Message::PairResponse(ref resp) => {
-            if let Some(target_tx) = registry.get_tx(resp.from).await {
+            if let Some(target_tx) = registry.get_tx(resp.to).await {
                 send_msg(&target_tx, envelope.message);
             }
         }
@@ -163,6 +163,14 @@ async fn dispatch(text: &str, from: NodeId, registry: &Arc<Registry>, tx: &NodeT
                     send_msg(&target_tx, envelope.message);
                 } else {
                     send_error(tx, "target_offline", "target node is not connected");
+                }
+            }
+        }
+
+        Message::TaskResult(ref res) => {
+            if let Some(to) = res.to {
+                if let Some(target_tx) = registry.get_tx(to).await {
+                    send_msg(&target_tx, envelope.message);
                 }
             }
         }

@@ -21,6 +21,7 @@ pub fn heartbeat(from: NodeId, payload: HeartbeatPayload) -> Message {
 /// Construct a [`Message::PairRequest`].
 pub fn pair_request(
     from: NodeId,
+    to: NodeId,
     name: impl Into<String>,
     public_key: impl Into<String>,
     capabilities: Vec<Capability>,
@@ -28,6 +29,7 @@ pub fn pair_request(
 ) -> Message {
     Message::PairRequest(PairRequest {
         from,
+        to,
         name: name.into(),
         public_key: public_key.into(),
         capabilities,
@@ -38,11 +40,13 @@ pub fn pair_request(
 /// Construct a [`Message::PairResponse`] accepting a pair request.
 pub fn pair_accept(
     from: NodeId,
+    to: NodeId,
     name: impl Into<String>,
     public_key: impl Into<String>,
 ) -> Message {
     Message::PairResponse(PairResponse {
         from,
+        to,
         name: name.into(),
         public_key: public_key.into(),
         accepted: true,
@@ -53,12 +57,14 @@ pub fn pair_accept(
 /// Construct a [`Message::PairResponse`] rejecting a pair request.
 pub fn pair_reject(
     from: NodeId,
+    to: NodeId,
     name: impl Into<String>,
     public_key: impl Into<String>,
     reason: impl Into<String>,
 ) -> Message {
     Message::PairResponse(PairResponse {
         from,
+        to,
         name: name.into(),
         public_key: public_key.into(),
         accepted: false,
@@ -152,7 +158,8 @@ mod tests {
     #[test]
     fn pair_accept_sets_accepted_true() {
         let from = NodeId::new_random();
-        let msg = pair_accept(from, "My Node", "a".repeat(64));
+        let to = NodeId::new_random();
+        let msg = pair_accept(from, to, "My Node", "a".repeat(64));
         match msg {
             Message::PairResponse(r) => {
                 assert!(r.accepted);
@@ -165,7 +172,8 @@ mod tests {
     #[test]
     fn pair_reject_sets_accepted_false() {
         let from = NodeId::new_random();
-        let msg = pair_reject(from, "My Node", "a".repeat(64), "user denied");
+        let to = NodeId::new_random();
+        let msg = pair_reject(from, to, "My Node", "a".repeat(64), "user denied");
         match msg {
             Message::PairResponse(r) => {
                 assert!(!r.accepted);

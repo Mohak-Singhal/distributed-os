@@ -3,6 +3,7 @@
 mod search;
 mod ping;
 mod pair;
+mod net;
 
 use tracing_subscriber::{fmt, EnvFilter};
 

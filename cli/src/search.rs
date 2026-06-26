@@ -1,10 +1,8 @@
-use dos_common::config::Config;
 use dos_networking::Connection;
 use dos_protocol::{builder::search_request, Message};
 
 pub async fn run_search(query: String) -> anyhow::Result<()> {
-    let config = Config::load("dos-config.toml")?;
-    let conn = dos_networking::connect(&config.relay_url).await?;
+    let (conn, _cli_id) = crate::net::connect_and_identify().await?;
 
     let req = search_request(query);
     conn.send(&req).await?;
