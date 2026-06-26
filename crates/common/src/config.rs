@@ -12,6 +12,7 @@ use crate::{constants::*, CommonError};
 
 /// Top-level application configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(default)]
 pub struct Config {
     /// Human-readable name for this node (defaults to the OS hostname).
     pub node_name: String,
