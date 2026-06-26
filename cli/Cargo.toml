@@ -1,0 +1,27 @@
+[package]
+name = "dos-cli"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "CLI management tool for the Personal Distributed OS"
+
+[[bin]]
+name = "dos"
+path = "src/main.rs"
+
+[dependencies]
+dos-core     = { workspace = true }
+dos-protocol = { workspace = true }
+dos-crypto   = { workspace = true }
+tokio        = { workspace = true }
+tracing      = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow       = { workspace = true }
+dos-networking = { workspace = true }
+dos-common   = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
+uuid         = { workspace = true }
+serde_json   = { workspace = true }

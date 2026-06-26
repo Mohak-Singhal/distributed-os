@@ -1,0 +1,16 @@
+[package]
+name = "dos-platform-linux"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Linux-specific platform implementations"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dos-core      = { workspace = true }
+dos-heartbeat = { workspace = true }
+dos-protocol  = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+async-trait   = "0.1"

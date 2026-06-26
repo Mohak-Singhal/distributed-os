@@ -1,0 +1,17 @@
+[package]
+name = "dos-crypto"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "ed25519 identity and key management"
+
+[dependencies]
+dos-core      = { workspace = true }
+ed25519-dalek = { workspace = true }
+rand          = { workspace = true }
+serde         = { workspace = true }
+uuid          = { workspace = true }
+thiserror     = { workspace = true }
+hex           = "0.4"

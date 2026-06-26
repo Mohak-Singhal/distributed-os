@@ -1,0 +1,22 @@
+[package]
+name = "dos-storage"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "SQLite persistence: nodes, keys, tasks, heartbeat history, settings"
+
+[dependencies]
+dos-core     = { workspace = true }
+dos-protocol = { workspace = true }
+dos-crypto   = { workspace = true }
+sqlx         = { workspace = true }
+tokio        = { workspace = true }
+tracing      = { workspace = true }
+thiserror    = { workspace = true }
+chrono       = { workspace = true }
+serde        = { workspace = true }
+serde_json   = { workspace = true }
+uuid         = { workspace = true }
+async-trait  = "0.1"

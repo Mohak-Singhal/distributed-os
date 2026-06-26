@@ -1,0 +1,26 @@
+[package]
+name = "dos-android"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Android agent — Rust core with JNI bridge (Phase 7)"
+
+[lib]
+name = "dos_android"
+path = "src/lib.rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+dos-core         = { workspace = true }
+dos-protocol     = { workspace = true }
+dos-heartbeat    = { workspace = true }
+dos-storage      = { workspace = true }
+dos-crypto       = { workspace = true }
+dos-platform-android = { workspace = true }
+tokio            = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow           = { workspace = true }
+jni              = "0.21"

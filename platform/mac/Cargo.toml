@@ -1,0 +1,16 @@
+[package]
+name = "dos-platform-mac"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "macOS-specific platform implementations"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+dos-core      = { workspace = true }
+dos-heartbeat = { workspace = true }
+dos-protocol  = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+async-trait   = "0.1"

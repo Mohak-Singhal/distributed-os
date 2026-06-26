@@ -1,0 +1,17 @@
+[package]
+name = "dos-heartbeat"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Heartbeat scheduling and payload construction"
+
+[dependencies]
+dos-core     = { workspace = true }
+dos-protocol = { workspace = true }
+tokio        = { workspace = true }
+tracing      = { workspace = true }
+thiserror    = { workspace = true }
+chrono       = { workspace = true }
+async-trait  = "0.1"

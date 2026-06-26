@@ -1,0 +1,87 @@
+[workspace]
+members = [
+    "crates/core",
+    "crates/common",
+    "crates/protocol",
+    "crates/networking",
+    "crates/discovery",
+    "crates/heartbeat",
+    "crates/storage",
+    "crates/task_manager",
+    "crates/search",
+    "crates/crypto",
+    "agents/desktop",
+    "agents/android",
+    "platform/mac",
+    "platform/windows",
+    "platform/linux",
+    "platform/android",
+    "relay",
+    "cli",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Mohak Singhal"]
+license = "MIT"
+rust-version = "1.75"
+
+[workspace.dependencies]
+# --- Async ---
+tokio = { version = "1", features = ["full"] }
+
+# --- Serialization ---
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# --- IDs ---
+uuid = { version = "1", features = ["v4", "v5", "serde"] }
+
+# --- Database ---
+sqlx = { version = "0.8", default-features = false, features = [
+    "sqlite",
+    "runtime-tokio",
+    "migrate",
+    "macros",
+] }
+
+# --- Logging ---
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+
+# --- Networking ---
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+
+# --- Cryptography ---
+ed25519-dalek = { version = "2", features = ["rand_core", "serde"] }
+rand = "0.8"
+hex = "0.4"
+
+# --- Configuration ---
+toml = "0.8"
+
+# --- Error handling ---
+thiserror = "1"
+anyhow = "1"
+
+# --- Time ---
+chrono = { version = "0.4", features = ["serde"] }
+
+# --- Internal crates ---
+dos-common       = { path = "crates/common" }
+dos-core         = { path = "crates/core" }
+dos-protocol     = { path = "crates/protocol" }
+dos-networking   = { path = "crates/networking" }
+dos-discovery    = { path = "crates/discovery" }
+dos-heartbeat    = { path = "crates/heartbeat" }
+dos-storage      = { path = "crates/storage" }
+dos-task-manager = { path = "crates/task_manager" }
+dos-search       = { path = "crates/search" }
+dos-crypto       = { path = "crates/crypto" }
+dos-platform-mac     = { path = "platform/mac" }
+dos-platform-windows = { path = "platform/windows" }
+dos-platform-linux   = { path = "platform/linux" }
+dos-platform-android = { path = "platform/android" }

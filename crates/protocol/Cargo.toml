@@ -1,0 +1,17 @@
+[package]
+name = "dos-protocol"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Wire protocol: messages, serialization, typed IDs"
+
+[dependencies]
+dos-core   = { workspace = true }
+serde      = { workspace = true }
+serde_json = { workspace = true }
+uuid       = { workspace = true }
+chrono     = { workspace = true }
+thiserror  = { workspace = true }
+rand       = { workspace = true }

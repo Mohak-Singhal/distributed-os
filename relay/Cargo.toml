@@ -1,0 +1,30 @@
+[package]
+name = "dos-relay"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Relay server — WebSocket hub for cross-network node communication"
+
+[[bin]]
+name = "dos-relay"
+path = "src/main.rs"
+
+[dependencies]
+dos-common       = { workspace = true }
+dos-core         = { workspace = true }
+dos-protocol     = { workspace = true }
+dos-networking   = { workspace = true }
+dos-storage      = { workspace = true }
+dos-crypto       = { workspace = true }
+tokio            = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util     = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow           = { workspace = true }
+toml             = { workspace = true }
+serde            = { workspace = true }
+chrono           = { workspace = true }
+uuid             = { workspace = true }

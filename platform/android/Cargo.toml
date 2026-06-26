@@ -1,0 +1,18 @@
+[package]
+name = "dos-platform-android"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Android-specific platform implementations (JNI bridge)"
+
+# Android agent is built as a cdylib for JNI. The lib type is overridden
+# in the android agent's Cargo.toml. This crate provides only the Rust side.
+[dependencies]
+dos-core      = { workspace = true }
+dos-heartbeat = { workspace = true }
+dos-protocol  = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+async-trait   = "0.1"

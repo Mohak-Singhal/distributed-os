@@ -1,0 +1,43 @@
+[package]
+name = "dos-desktop"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Desktop agent binary — runs on macOS, Windows, and Linux"
+
+[[bin]]
+name = "dos-desktop"
+path = "src/main.rs"
+
+[dependencies]
+dos-common       = { workspace = true }
+dos-core         = { workspace = true }
+dos-protocol     = { workspace = true }
+dos-networking   = { workspace = true }
+dos-discovery    = { workspace = true }
+dos-heartbeat    = { workspace = true }
+dos-storage      = { workspace = true }
+dos-task-manager = { workspace = true }
+dos-search       = { workspace = true }
+dos-crypto       = { workspace = true }
+tokio            = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow           = { workspace = true }
+toml             = { workspace = true }
+chrono           = { workspace = true }
+futures-util     = { workspace = true }
+tokio-tungstenite = { workspace = true }
+hex              = { workspace = true }
+serde_json       = { workspace = true }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+dos-platform-mac = { workspace = true }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+dos-platform-windows = { workspace = true }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+dos-platform-linux = { workspace = true }

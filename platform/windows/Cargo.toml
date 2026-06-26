@@ -1,0 +1,16 @@
+[package]
+name = "dos-platform-windows"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Windows-specific platform implementations"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+dos-core      = { workspace = true }
+dos-heartbeat = { workspace = true }
+dos-protocol  = { workspace = true }
+chrono        = { workspace = true }
+thiserror     = { workspace = true }
+async-trait   = "0.1"
