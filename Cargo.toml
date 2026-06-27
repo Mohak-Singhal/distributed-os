@@ -8,6 +8,7 @@ members = [
     "crates/heartbeat",
     "crates/storage",
     "crates/task_manager",
+    "crates/runtime",
     "crates/search",
     "crates/crypto",
     "agents/desktop",
@@ -17,7 +18,7 @@ members = [
     "platform/linux",
     "platform/android",
     "relay",
-    "cli",
+    "cli", "crates/runtime",
 ]
 resolver = "2"
 
@@ -77,6 +78,7 @@ dos-protocol     = { path = "crates/protocol" }
 dos-networking   = { path = "crates/networking" }
 dos-discovery    = { path = "crates/discovery" }
 dos-heartbeat    = { path = "crates/heartbeat" }
+dos-runtime      = { path = "crates/runtime" }
 dos-storage      = { path = "crates/storage" }
 dos-task-manager = { path = "crates/task_manager" }
 dos-search       = { path = "crates/search" }

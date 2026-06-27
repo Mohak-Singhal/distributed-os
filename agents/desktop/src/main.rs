@@ -1,6 +1,6 @@
 //! Desktop Agent — macOS, Windows, Linux.
 
-mod agent;
+
 
 use tracing::info;
 use tracing_subscriber::{fmt, EnvFilter};
@@ -10,7 +10,7 @@ use dos_core::Platform;
 use dos_crypto::NodeIdentity;
 use dos_storage::{Database, SettingsRepository, SqliteSettingsRepository};
 
-use crate::agent::Agent;
+use dos_runtime::Agent;
 
 fn main() -> anyhow::Result<()> {
     fmt()
@@ -46,7 +46,7 @@ async fn run() -> anyhow::Result<()> {
         identity,
         config,
         platform: detect_platform(),
-        // capabilities: vec![Capability::Compute, Capability::Terminal],
+        event_tx: None,
     };
 
     agent.run().await

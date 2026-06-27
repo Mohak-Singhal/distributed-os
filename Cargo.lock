@@ -294,13 +294,16 @@ name = "dos-android"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "dos-common",
  "dos-core",
  "dos-crypto",
- "dos-heartbeat",
  "dos-platform-android",
- "dos-protocol",
+ "dos-runtime",
  "dos-storage",
+ "hex",
  "jni",
+ "lazy_static",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -365,26 +368,16 @@ name = "dos-desktop"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "chrono",
  "dos-common",
  "dos-core",
  "dos-crypto",
- "dos-discovery",
- "dos-heartbeat",
- "dos-networking",
  "dos-platform-linux",
  "dos-platform-mac",
  "dos-platform-windows",
- "dos-protocol",
- "dos-search",
+ "dos-runtime",
  "dos-storage",
- "dos-task-manager",
- "futures-util",
  "hex",
- "serde_json",
  "tokio",
- "tokio-tungstenite",
- "toml",
  "tracing",
  "tracing-subscriber",
 ]
@@ -513,6 +506,26 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+]
+
+[[package]]
+name = "dos-runtime"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "dos-common",
+ "dos-core",
+ "dos-crypto",
+ "dos-networking",
+ "dos-protocol",
+ "dos-task-manager",
+ "futures-util",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
 ]
 
 [[package]]

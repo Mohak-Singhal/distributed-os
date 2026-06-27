@@ -19,12 +19,23 @@ use dos_protocol::{
     Codec, Envelope, Message,
 };
 
-/// The core desktop agent — connects to the relay, registers, and handles messages.
+#[derive(Debug, serde::Serialize)]
+#[serde(tag = "type", content = "data")]
+pub enum AgentEvent {
+    Connected,
+    Disconnected,
+    PairingRequested { from: String, code: String },
+    PairingAccepted { by: String },
+    PingReceived { from: String },
+    Error { message: String },
+}
+
+/// The core node runtime engine — connects to the relay, registers, and handles messages.
 pub struct Agent {
     pub identity: NodeIdentity,
     pub config: Config,
     pub platform: Platform,
-    // pub capabilities: Vec<Capability>, // Will be used in Phase 7+
+    pub event_tx: Option<mpsc::UnboundedSender<AgentEvent>>,
 }
 
 impl Agent {
@@ -46,6 +57,9 @@ impl Agent {
     async fn connect_and_run(&self) -> anyhow::Result<()> {
         let (ws, _) = connect_async(self.config.relay_url.as_str()).await?;
         info!("connected to relay ✓");
+        if let Some(tx) = &self.event_tx {
+            let _ = tx.send(AgentEvent::Connected);
+        }
 
         let (mut sink, mut stream) = ws.split();
         let (out_tx, mut out_rx) = mpsc::unbounded_channel::<String>();
@@ -128,11 +142,17 @@ impl Agent {
             }
             Message::Error { code, message } => {
                 warn!(code, message, "relay error");
+                if let Some(etx) = &self.event_tx {
+                    let _ = etx.send(AgentEvent::Error { message: format!("{}: {}", code, message) });
+                }
             }
             Message::PairRequest(req) => {
                 info!("Pairing request received from {} with code {}", req.from, req.pair_code);
+                if let Some(etx) = &self.event_tx {
+                    let _ = etx.send(AgentEvent::PairingRequested { from: req.from.to_string(), code: req.pair_code.clone() });
+                }
                 // Auto-accept for now in v0.1
-                let msg = dos_protocol::builder::pair_accept(NodeId(self.identity.node_id), req.from, "Desktop Agent", "0000");
+                let msg = dos_protocol::builder::pair_accept(NodeId(self.identity.node_id), req.from, "Android Agent", "0000");
                 if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
                     tx.send(json).ok();
                 }
@@ -140,6 +160,9 @@ impl Agent {
             Message::TaskRequest(req) => {
                 info!("Task request received: {} from {}", req.kind, req.from);
                 if req.kind == "ping" {
+                    if let Some(etx) = &self.event_tx {
+                        let _ = etx.send(AgentEvent::PingReceived { from: req.from.to_string() });
+                    }
                     let result = serde_json::json!({ "success": true, "message": "pong" });
                     let msg = dos_protocol::builder::task_result(NodeId(self.identity.node_id), Some(req.from), req.task_id, result);
                     if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
