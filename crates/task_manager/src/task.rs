@@ -21,6 +21,12 @@ pub struct TaskOutput {
 pub struct TaskContext {
     /// The ID of the node running this task.
     pub node_id: Uuid,
+    /// The original requester node, if this task was triggered over the network.
+    pub origin: Option<Uuid>,
+    /// Optional channel to send the completion result back to the network layer.
+    /// Format: `(task_id, origin, Result)`
+    #[allow(clippy::type_complexity)]
+    pub result_tx: Option<tokio::sync::mpsc::UnboundedSender<(Uuid, Option<Uuid>, Result<crate::TaskOutput, crate::TaskError>)>>,
 }
 
 /// The universal task abstraction.

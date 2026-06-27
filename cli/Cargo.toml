@@ -26,3 +26,5 @@ futures-util = { workspace = true }
 uuid         = { workspace = true }
 serde_json   = { workspace = true }
 chrono       = { workspace = true }
+dos-task-manager = { version = "0.1.0", path = "../crates/task_manager" }
+async-trait = "0.1.89"

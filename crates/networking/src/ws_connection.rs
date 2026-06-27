@@ -28,6 +28,7 @@ type WsStream = futures_util::stream::SplitStream<
 ///
 /// Both halves are held behind `Arc<Mutex<_>>` so the connection can be
 /// cloned and shared across tasks (e.g. separate send and heartbeat tasks).
+#[derive(Clone)]
 pub struct WsConnection {
     sink: Arc<Mutex<WsSink>>,
     stream: Arc<Mutex<WsStream>>,

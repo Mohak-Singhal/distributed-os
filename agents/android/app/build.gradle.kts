@@ -47,21 +47,4 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
 }
 
-tasks.register<Exec>("cargoBuild") {
-    workingDir = file("../")
-    
-    val isRelease = gradle.startParameter.taskNames.any { it.contains("Release") }
-    
-    val cargoCommand = mutableListOf("cargo", "ndk", "-o", "./app/src/main/jniLibs", "-t", "arm64-v8a", "-t", "armeabi-v7a", "-t", "x86", "-t", "x86_64", "build", "-p", "dos-android")
-    if (isRelease) {
-        cargoCommand.add("--release")
-    }
 
-    commandLine = cargoCommand
-}
-
-tasks.whenTaskAdded {
-    if (name.startsWith("merge") && name.endsWith("JniLibFolders")) {
-        dependsOn("cargoBuild")
-    }
-}

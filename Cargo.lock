@@ -314,12 +314,14 @@ name = "dos-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-trait",
  "chrono",
  "dos-common",
  "dos-core",
  "dos-crypto",
  "dos-networking",
  "dos-protocol",
+ "dos-task-manager",
  "futures-util",
  "serde_json",
  "tokio",

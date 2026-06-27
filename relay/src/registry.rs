@@ -21,6 +21,7 @@ pub struct ConnectedNode {
     pub name: String,
     pub platform: Platform,
     pub capabilities: Vec<Capability>,
+    pub version: String,
     pub status: NodeStatus,
     pub last_seen: chrono::DateTime<Utc>,
     pub tx: NodeTx,
@@ -56,6 +57,7 @@ impl Registry {
                 name,
                 platform,
                 capabilities,
+                version: payload.version.clone(),
                 status: NodeStatus::Online,
                 last_seen: payload.timestamp,
                 tx,
@@ -68,6 +70,7 @@ impl Registry {
         let mut nodes = self.nodes.write().await;
         if let Some(n) = nodes.get_mut(&node_id) {
             n.status = NodeStatus::Online;
+            n.version = payload.version.clone();
             n.last_seen = payload.timestamp;
         }
     }
@@ -108,6 +111,8 @@ impl Registry {
                         name: n.name.clone(),
                         platform: n.platform.clone(),
                         status: n.status,
+                        capabilities: n.capabilities.clone(),
+                        version: n.version.clone(),
                         score,
                     })
                 } else {
@@ -140,11 +145,40 @@ impl Registry {
 }
 
 fn score_node(node: &ConnectedNode, q: &str) -> f32 {
-    if q.is_empty() { return 1.0; }
-    if node.status.to_string() == q { return 1.0; }
-    if node.platform.to_string() == q { return 1.0; }
-    if node.name.to_lowercase().contains(q) { return 0.8; }
-    if node.platform.to_string().contains(q) { return 0.7; }
-    if node.capabilities.iter().any(|c| c.to_string().contains(q)) { return 0.6; }
+    if q.is_empty() {
+        return 1.0;
+    }
+    if node.status.to_string() == q {
+        return 1.0;
+    }
+    if node.platform.to_string() == q {
+        return 1.0;
+    }
+    if node.node_id.to_string().to_lowercase().contains(q) {
+        return 0.9;
+    }
+    if node.name.to_lowercase().contains(q) {
+        return 0.8;
+    }
+    if node.version.to_lowercase().contains(q) {
+        return 0.8;
+    }
+    if node.platform.to_string().contains(q) {
+        return 0.7;
+    }
+
+    let target_cap = if let Some(stripped) = q.strip_prefix("capability=") {
+        stripped
+    } else {
+        q
+    };
+    if node
+        .capabilities
+        .iter()
+        .any(|c| c.to_string().to_lowercase().contains(target_cap))
+    {
+        return if q.starts_with("capability=") { 1.0 } else { 0.6 };
+    }
+
     0.0
 }

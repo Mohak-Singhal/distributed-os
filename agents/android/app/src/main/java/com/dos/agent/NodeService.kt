@@ -52,12 +52,11 @@ class NodeService : Service() {
         _nodeState.value = "Starting..."
 
         val configPath = File(filesDir, "dos-config.toml").absolutePath
-        // Ensure default config file exists
         val configFile = File(configPath)
-        if (!configFile.exists()) {
-            FileWriter(configFile).use { writer ->
-                writer.write("relay_url = \"ws://10.0.2.2:7890\"\n")
-            }
+        
+        // Force update to the Mac's physical IP address on Wi-Fi for testing
+        FileWriter(configFile).use { writer ->
+            writer.write("relay_url = \"ws://192.168.1.3:7890\"\n")
         }
 
         Core.startAgent(configPath, object : NodeCallback {

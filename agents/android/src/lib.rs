@@ -42,13 +42,16 @@ pub extern "system" fn Java_com_dos_agent_Core_startAgent<'local>(
         if let Ok(rt) = tokio::runtime::Builder::new_multi_thread().enable_all().thread_name("dos-android-worker").build() {
             rt.block_on(async move {
                 // Initialize Config
-                let config = Config::load(&path_str).unwrap_or_else(|_| Config {
+                let mut config = Config::load(&path_str).unwrap_or_else(|_| Config {
                     node_name: "Android Phone".to_string(),
                     relay_url: "ws://127.0.0.1:7890".to_string(), // Fallback
                     node_port: 7891,
                     db_path: db_path.clone(),
                     log_level: "info".to_string(),
                 });
+
+                // ALWAYS override db_path to the absolute app private directory
+                config.db_path = db_path.clone();
 
                 // Initialize Database and Identity
                 let db = Database::open(&config.db_path).await.expect("Failed to open database");
@@ -58,11 +61,10 @@ pub extern "system" fn Java_com_dos_agent_Core_startAgent<'local>(
                 let (event_tx, mut event_rx) = mpsc::unbounded_channel::<AgentEvent>();
 
                 // Spawn Event dispatcher task to JVM
-                let jvm_clone = jvm.clone();
                 let callback_ref = callback_global.clone();
                 tokio::spawn(async move {
                     while let Some(event) = event_rx.recv().await {
-                        if let Ok(mut local_env) = jvm_clone.attach_current_thread() {
+                        if let Ok(mut local_env) = jvm.attach_current_thread() {
                             if let Ok(json) = serde_json::to_string(&event) {
                                 let j_string = local_env.new_string(json).unwrap();
                                 let _ = local_env.call_method(

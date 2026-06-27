@@ -1,6 +1,7 @@
 //! In-memory task queue backed by a tokio channel.
 
 use std::sync::Arc;
+use uuid::Uuid;
 
 use tokio::sync::mpsc;
 use tracing::debug;
@@ -12,7 +13,7 @@ use crate::{Task, TaskError};
 /// Producers call [`TaskQueue::submit`]; the [`crate::TaskDispatcher`] drains
 /// the receiving end.
 pub struct TaskQueue {
-    sender: mpsc::Sender<Arc<dyn Task>>,
+    sender: mpsc::Sender<(Arc<dyn Task>, Option<Uuid>)>,
 }
 
 impl TaskQueue {
@@ -27,13 +28,13 @@ impl TaskQueue {
     ///
     /// # Errors
     /// Returns [`TaskError::QueueFull`] if the channel buffer is at capacity.
-    pub async fn submit(&self, task: Arc<dyn Task>) -> Result<(), TaskError> {
+    pub async fn submit(&self, task: Arc<dyn Task>, origin: Option<Uuid>) -> Result<(), TaskError> {
         debug!(task_id = %task.id(), kind = task.kind(), "task submitted");
-        self.sender.send(task).await.map_err(|_| TaskError::QueueFull)
+        self.sender.send((task, origin)).await.map_err(|_| TaskError::QueueFull)
     }
 }
 
 /// The receiving end of the [`TaskQueue`]. Owned by the [`crate::TaskDispatcher`].
 pub struct TaskQueueReceiver {
-    pub(crate) receiver: mpsc::Receiver<Arc<dyn Task>>,
+    pub(crate) receiver: mpsc::Receiver<(Arc<dyn Task>, Option<Uuid>)>,
 }

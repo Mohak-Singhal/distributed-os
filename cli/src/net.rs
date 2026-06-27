@@ -27,5 +27,8 @@ pub async fn connect_and_identify() -> anyhow::Result<(WsConnection, NodeId)> {
     let identify_msg = heartbeat(cli_id, payload);
     conn.send(&identify_msg).await?;
 
+    // Give the relay a moment to register us before we start sending requests
+    tokio::time::sleep(tokio::time::Duration::from_millis(300)).await;
+
     Ok((conn, cli_id))
 }

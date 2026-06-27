@@ -10,6 +10,7 @@
         android:allowBackup="true"
         android:label="PDOS Node"
         android:supportsRtl="true"
+        android:usesCleartextTraffic="true"
         android:theme="@style/Theme.AppCompat.Light.NoActionBar">
         
         <activity

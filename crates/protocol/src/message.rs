@@ -122,6 +122,10 @@ pub struct SearchResult {
     pub platform: Platform,
     /// Current status.
     pub status: NodeStatus,
+    /// Capabilities advertised by the node.
+    pub capabilities: Vec<dos_core::Capability>,
+    /// Protocol version.
+    pub version: String,
     /// Relevance score (higher is better).
     pub score: f32,
 }

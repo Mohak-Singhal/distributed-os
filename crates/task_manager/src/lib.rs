@@ -19,10 +19,13 @@ pub mod error;
 /// Ping task implementation.
 pub mod ping;
 pub mod queue;
+/// Task registry implementation.
+pub mod registry;
 pub mod task;
 
 pub use dispatcher::TaskDispatcher;
 pub use error::TaskError;
 pub use ping::PingTask;
 pub use queue::TaskQueue;
+pub use registry::TaskRegistry;
 pub use task::{Task, TaskContext, TaskOutput};

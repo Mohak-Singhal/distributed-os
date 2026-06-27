@@ -1,159 +1,253 @@
-# Personal Distributed Operating System (PDOS) — Network Core (v0.1)
+# Personal Distributed Operating System (PDOS) — Runtime v0.1
 
 A production-grade, secure, and cross-platform networking foundation designed to make all your devices behave as a single, unified computer.
 
-This is a private repository designed with open-source quality standards in mind.
+This is a private repository designed with open-source quality standards.
 
----
-
-## 🌟 The Vision
+## The Vision
 
 Imagine if your macOS laptop, Android phone, Windows workstation, Linux server, and future browser agents worked together as a single operating system. Instead of talking to specific devices using platform-dependent protocols, the system treats every endpoint as a **Node** and advertises its **Capabilities** (e.g., Compute, Storage, AI Models, Camera, Remote Execution).
 
 **Version 0.1** establishes the zero-trust networking foundation:
-* **Node Identity:** Permanent cryptographic identifiers per device.
+* **Node Identity:** Permanent cryptographic identifiers per device (Ed25519).
 * **Discovery:** Real-time online/offline registration.
 * **Message Routing:** A secure relay routing versioned packets.
-* **Task Dispatched Queues:** The ability to route and execute commands on other devices (e.g. Ping).
+* **Native Cross-Platform Execution:** A shared Rust runtime running natively on macOS (CLI) and Android (JNI Background Service).
 
----
+```text
+                PDOS Runtime
 
-## 📁 Repository Layout
+          ┌──────── Relay ────────┐
+          │                       │
+   Desktop Runtime         Android Runtime
+          │                       │
+          └──── Shared Rust Runtime ────┘
+                     │
+          Identity • Tasks • Search
+```
 
-The project uses a Cargo workspace to maintain clean boundaries between components:
+## Repository Architecture
+
+The project uses a Cargo workspace to maintain clean boundaries between components, sharing a core runtime engine across all platforms.
 
 ```text
 ├── agents/
 │   ├── desktop/          # macOS, Linux, and Windows background daemon
-│   └── android/          # Android JNI library wrapper (cdylib)
+│   └── android/          # Native Android App + Foreground Service + JNI bridge
 ├── cli/                  # Command-line controller (`dos` binary)
 ├── relay/                # Central WebSocket routing hub
-├── platform/             # OS-specific hardware/system monitors
-│   ├── mac/ | windows/ | linux/ | android/
 ├── crates/               # Core libraries
+│   ├── common/           # Shared utilities and configurations
 │   ├── core/             # Base models (Node, Capability, Task)
 │   ├── crypto/           # Ed25519 signing and node verification
+│   ├── discovery/        # Network discovery mechanisms
+│   ├── heartbeat/        # Telemetry and heartbeat system
+│   ├── networking/       # WebSocket connection management
 │   ├── protocol/         # Packet schemas, builders, and codecs
-│   ├── networking/       # WebSocket connection abstraction
-│   ├── storage/          # SQLite persistence layer (repositories)
-│   ├── task_manager/     # Task queue and Ping implementation
-│   ├── search/           # Registry node search
-│   └── common/           # Error types, configs, and utilities
-└── migrations/           # SQLite schema migrations
+│   ├── runtime/          # The shared agent engine (Tokio runtime)
+│   ├── search/           # Structured query indexing
+│   ├── storage/          # SQLite persistence layer
+│   └── task_manager/     # Dynamic task dispatch subsystem
 ```
 
----
-
-## 🛠️ Technical Architecture
+## Technical Implementation
 
 ### 1. Cryptographic Identity & Persistence
 Every node generates an **Ed25519 keypair** on its first run. 
 * The **Node ID** is a deterministic UUID v5 derived from the public key, ensuring it never changes.
-* The private key is securely stored in a local SQLite settings repository (`dos.db`). 
-* Path handling uses raw file connections (`SqliteConnectOptions`) to support directory paths containing spaces.
+* The private key is securely stored in a local SQLite database (`dos.db`). 
+* On Android, this database is safely sandboxed inside the app's internal private storage directory (`filesDir`), preventing data loss or unauthorized access.
 
-### 2. The Custom Wire Protocol (`dos-protocol`)
-All WebSocket frames carry exactly one versioned `Envelope`:
-```json
-{
-  "version": 1,
-  "message_id": "550e8400-e29b-41d4-a716-446655440000",
-  "type": "task_request",
-  "from": "732626c7-40c3-53bd-9110-848e1c0d457b",
-  "to": "3f9a1ce3-99e3-5d21-b366-4906c804b6c5",
-  "task_id": "84aed54f-2742-47dc-954d-ff1430a83171",
-  "task_type": "ping",
-  "payload": {}
+### 2. Node Registration & Network Flow
+When a node starts, it follows a deterministic registration flow. The Desktop and Android agents behave identically:
+```text
+Agent Runtime
+      ↓
+Generate Identity (Ed25519)
+      ↓
+Load Local State
+      ↓
+Connect to Relay
+      ↓
+Authenticate
+      ↓
+Register Node & Advertise Capabilities
+      ↓
+Start Heartbeat Loop
+      ↓
+Node becomes Searchable
+      ↓
+Accept & Execute Tasks
+```
+
+### 3. Capability Advertisement
+Nodes advertise exactly what they are capable of. The `Capability` system allows future versions of the PDOS engine to route workloads automatically. 
+When a node connects to the relay, it advertises capabilities such as:
+```rust
+pub enum Capability {
+    Compute,
+    FileStorage,
+    Search,
+    Docker,
+    AiModel,
+    Browser,
+    Notifications,
+    Camera,
+    Microphone,
+    Terminal,
+    RemoteExecution,
 }
 ```
-* **Version Control:** Nodes reject mismatched versions immediately.
-* **Correlated Transports:** Every request-response pair uses `message_id` tracking.
 
-### 3. Relay Routing Node
-The `dos-relay` acts as a zero-state, high-performance router. It maintains a registry of connected clients in memory and routes packets to target nodes based on their destination ID (`to`). It performs strict heartbeat checks to prune offline clients.
+### 4. Node Registry
+The relay maintains an in-memory registry of currently connected nodes. Persistent node identity and pairing information are stored locally by each node (the relay is not a database). Each connected node record contains:
+- **Node ID**
+- **Name**
+- **Platform**
+- **Version**
+- **Status**
+- **Capabilities**
+- **Last Heartbeat**
 
----
+### 5. Universal Search
+The Universal Search subsystem provides a common interface for discovering nodes across the distributed network. 
+*Universal Search is intentionally limited to node discovery in Version 0.1. Future versions will extend the same interface to files, containers, browser tabs, AI models, and other distributed resources.*
 
-## 🚀 Getting Started
+Supported search fields:
+- Node Name
+- Node ID
+- Platform
+- Online Status
+- Capabilities
+- Version
 
-### 📋 Prerequisites
-* **Rust:** Install via `rustup` (1.75+ recommended).
-* **SQLite:** Native SQLite development libraries (installed by default on macOS/Windows).
+**Examples:**
+```bash
+dos search mac
+dos search android
+dos search online
+dos search capability=compute
+```
 
-### 🖥️ Local Verification (loopback on Mac)
+**Returns:**
+```text
+Found 1 devices:
+  [1.0] MacBook Air (mac - online) v0.1.0 ID: 732626c7...
+      Capabilities: [compute, search]
+```
 
-Open three terminal windows side-by-side:
+### 6. Universal Task Manager
+Everything in PDOS is represented as a Task. A central part of the V0.1 architecture is the fully extensible `dos-task-manager`.
 
-#### 1. Start the Relay
+Version 0.1 includes:
+- `PingTask`
+- `PairTask`
+- `SearchTask`
+
+Future versions will add:
+- `FileTransferTask`
+- `RemoteCommandTask`
+- `DockerTask`
+- `AIInferenceTask`
+
+Without changing the underlying networking layer, new capabilities only require writing a new struct that implements the `Task` trait. 
+
+**Execution Flow:**
+```text
+CLI / Agent
+      ↓
+TaskRequest
+      ↓
+Task Registry
+      ↓
+Task Dispatcher
+      ↓
+Executor
+      ↓
+TaskResult
+      ↓
+Relay
+      ↓
+Requester
+```
+When a `TaskRequest` arrives over the wire, the runtime dynamically resolves the task type against a `TaskRegistry`, instantiates the corresponding command, enqueues it to a `TaskDispatcher`, and automatically routes the result back to the caller. Both the CLI (which acts as a Client) and the Android/Desktop daemons (which act as Agents) rely on the exact same Task Manager abstractions.
+
+### 7. Native Android Architecture
+Instead of using Termux or emulation, the Android implementation is a true native app.
+* **Rust Engine:** The shared `dos-runtime` is compiled to `arm64-v8a` and managed by a native Tokio multi-threaded runtime.
+* **JNI Bridge:** A custom interface bridges the Rust engine and the Android JVM.
+* **Foreground Service:** The node runs as a persistent Android Foreground Service, ensuring the OS doesn't kill the WebSocket connection when the screen is locked.
+* **Reactive UI:** The Kotlin UI layer uses `StateFlow` to react in real-time to connection status and error events streamed from the Rust backend.
+
+## Current Scope (v0.1)
+
+**Implemented**
+- [x] Node Identity
+- [x] Relay
+- [x] Pairing
+- [x] Registry
+- [x] Heartbeats
+- [x] Universal Search (Nodes)
+- [x] Universal Task Manager
+- [x] Android Runtime
+- [x] Desktop Runtime
+
+**Not Yet Implemented**
+- [ ] File Transfer
+- [ ] Remote Terminal
+- [ ] Distributed Compute
+- [ ] Docker Nodes
+- [ ] Browser Nodes
+- [ ] AI Task Scheduling
+- [ ] Synchronization
+
+## Validation & Testing (End-to-End)
+
+You can spin up the network locally to verify cross-device communication.
+
+### 1. Start the Relay (Mac)
+Run the central routing hub on your host machine:
 ```bash
 cargo run -p dos-relay
 ```
 
-#### 2. Start the Agent
+### 2. Launch the Android Node
+1. Connect your Android device via USB/ADB.
+2. Ensure you are on the same local Wi-Fi network as your Mac.
+3. Build and deploy the native app:
 ```bash
-cargo run -p dos-desktop
+cd agents/android
+cargo ndk -t arm64-v8a -o ./app/src/main/jniLibs build -p dos-android
+./gradlew installDebug
 ```
-*Copy the `node_id` printed in the startup logs (e.g. `732626c7-40c3-53bd-9110-848e1c0d457b`).*
+4. Open the app on your phone and tap **Start Node**.
 
-#### 3. Control via the CLI
-Use the CLI client to search the network and dispatch commands:
+### 3. Inspect the Network (Mac CLI)
+From your Mac, search the network for your Android phone and interact with it:
 ```bash
-# Search for online nodes
+# See all connected devices (should list your Mac CLI and the Android phone)
 cargo run -p dos-cli -- search ""
-
-# Ping the agent (measures round-trip latency)
-cargo run -p dos-cli -- ping <NODE_ID>
-
-# Pair with the agent
-cargo run -p dos-cli -- pair <NODE_ID>
+```
+**Returns:**
+```text
+Found 1 devices:
+  [1.0] Mohak's S23 (android - online) v0.1.0 ID: dd23f0d5-5c31-597f-9942-525e211c4bb9
+      Capabilities: [compute, notifications, camera]
 ```
 
----
+```bash
+# Ping the Android phone to test round-trip latency
+cargo run -p dos-cli -- ping <ANDROID_NODE_ID>
+```
+**Returns:**
+```text
+Reply from dd23f0d5-5c31-597f-9942-525e211c4bb9: time=82.1ms result={"message":"pong","success":true}
+```
 
-## 📱 Running on Android (via Termux)
+```bash
+# Pair with the Android phone
+cargo run -p dos-cli -- pair <ANDROID_NODE_ID>
+```
 
-1. Make sure your Mac has **Remote Login (SSH)** enabled in *System Settings > General > Sharing*.
-2. Install **Termux** on your Android phone.
-3. Open Termux and set up the Rust environment:
-   ```bash
-   pkg update -y && pkg install rust git -y
-   ```
-4. Clone the repository directly from your Mac's IP:
-   ```bash
-   git clone ssh://<username>@<mac-ip>/Users/mohaksinghal/Desktop/codeit/Device\ manager/distributed-os
-   cd distributed-os
-   ```
-5. Point the client config to your Mac's relay server:
-   ```bash
-   echo 'relay_url = "ws://<mac-ip>:7890"' > dos-config.toml
-   ```
-6. Run the agent:
-   ```bash
-   cargo run -p dos-desktop
-   ```
-7. Go back to your Mac CLI and run the search command—your Android phone will show up immediately!
-
----
-
-## 📦 Building Native Android Libraries (`cdylib`)
-
-The `agents/android` crate compiles into a C-compatible library (`.so`) that can be loaded into an Android Studio Kotlin/Java app using JNI.
-
-1. Install target toolchains:
-   ```bash
-   rustup target add aarch64-linux-android armv7-linux-androideabi i686-linux-android x86_64-linux-android
-   ```
-2. Install `cargo-ndk`:
-   ```bash
-   cargo install cargo-ndk
-   ```
-3. Compile (requires Android NDK installed):
-   ```bash
-   cargo ndk -t arm64-v8a -o ./jniLibs build -p dos-android --release
-   ```
-This generates the shared library files containing the native JNI bridge `Java_com_dos_agent_Core_startAgent`.
-
----
-
-## 🔒 License & Usage
-This is a private, proprietary software project. All rights reserved. Do not distribute without explicit permission.
+## License
+This is a private, proprietary software project. All rights reserved.

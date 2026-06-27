@@ -46,7 +46,11 @@ impl Agent {
             match self.connect_and_run().await {
                 Ok(_) => break,
                 Err(e) => {
+                    let err_msg = format!("Connection error: {}", e);
                     error!(error = %e, "connection lost — retrying in 5s");
+                    if let Some(tx) = &self.event_tx {
+                        let _ = tx.send(AgentEvent::Error { message: err_msg });
+                    }
                     tokio::time::sleep(Duration::from_secs(5)).await;
                 }
             }
@@ -70,6 +74,46 @@ impl Agent {
             while let Some(msg) = out_rx.recv().await {
                 if sink.send(WsMsg::Text(msg)).await.is_err() {
                     break;
+                }
+            }
+        });
+
+        // Set up TaskManager
+        let (res_tx, mut res_rx) = mpsc::unbounded_channel();
+        let (task_queue, task_rx) = dos_task_manager::TaskQueue::new(100);
+        
+        let mut registry = dos_task_manager::TaskRegistry::new();
+        // Register agent ping task
+        registry.register("ping", |req| {
+            Ok(Box::new(dos_task_manager::PingTask::with_id(req.task_id.0)))
+        });
+
+        let context = dos_task_manager::TaskContext {
+            node_id: self.identity.node_id,
+            origin: None,
+            result_tx: Some(res_tx),
+        };
+
+        let dispatcher = dos_task_manager::TaskDispatcher::new(task_rx, context);
+        let dispatcher_task = tokio::spawn(dispatcher.run());
+
+        // Result forwarder loop
+        let res_out_tx = out_tx.clone();
+        let my_id = self.identity.node_id;
+        let result_task = tokio::spawn(async move {
+            while let Some((task_id, origin, result)) = res_rx.recv().await {
+                let val = match result {
+                    Ok(out) => out.result,
+                    Err(e) => serde_json::json!({ "error": e.to_string() }),
+                };
+                let msg = dos_protocol::builder::task_result(
+                    NodeId(my_id),
+                    origin.map(NodeId),
+                    dos_protocol::ids::TaskId(task_id),
+                    val,
+                );
+                if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
+                    res_out_tx.send(json).ok();
                 }
             }
         });
@@ -112,13 +156,15 @@ impl Agent {
         // Main read loop
         while let Some(Ok(WsMsg::Text(text))) = stream.next().await {
             match codec.decode(&text) {
-                Ok(envelope) => self.handle_message(envelope.message, &out_tx),
+                Ok(envelope) => self.handle_message(envelope.message, &out_tx, &task_queue, &registry).await,
                 Err(e) => warn!(error = %e, "decode error"),
             }
         }
 
         write_task.abort();
         heartbeat_task.abort();
+        dispatcher_task.abort();
+        result_task.abort();
         Ok(())
     }
 
@@ -131,7 +177,13 @@ impl Agent {
         Ok(())
     }
 
-    fn handle_message(&self, msg: Message, tx: &mpsc::UnboundedSender<String>) {
+    async fn handle_message(
+        &self,
+        msg: Message,
+        tx: &mpsc::UnboundedSender<String>,
+        task_queue: &dos_task_manager::TaskQueue,
+        registry: &dos_task_manager::TaskRegistry,
+    ) {
         match msg {
             Message::DeviceListResponse(list) => self.print_device_list(&list),
             Message::SearchResponse(resp) => {
@@ -159,14 +211,25 @@ impl Agent {
             }
             Message::TaskRequest(req) => {
                 info!("Task request received: {} from {}", req.kind, req.from);
+                
+                // Fire a UI event if it's a ping, for UX purposes
                 if req.kind == "ping" {
                     if let Some(etx) = &self.event_tx {
                         let _ = etx.send(AgentEvent::PingReceived { from: req.from.to_string() });
                     }
-                    let result = serde_json::json!({ "success": true, "message": "pong" });
-                    let msg = dos_protocol::builder::task_result(NodeId(self.identity.node_id), Some(req.from), req.task_id, result);
-                    if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
-                        tx.send(json).ok();
+                }
+
+                let origin = Some(req.from.0);
+                
+                // Lookup in registry and enqueue
+                match registry.create_task(req) {
+                    Ok(task) => {
+                        if let Err(e) = task_queue.submit(task.into(), origin).await {
+                            warn!(error = %e, "failed to submit task to queue");
+                        }
+                    }
+                    Err(e) => {
+                        warn!(error = %e, "unknown or invalid task requested");
                     }
                 }
             }

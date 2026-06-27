@@ -21,8 +21,9 @@ impl TaskDispatcher {
     /// Start draining the queue. Runs until the sender is dropped.
     pub async fn run(mut self) {
         info!("task dispatcher started");
-        while let Some(task) = self.receiver.receiver.recv().await {
-            let ctx = self.context.clone();
+        while let Some((task, origin)) = self.receiver.receiver.recv().await {
+            let mut ctx = self.context.clone();
+            ctx.origin = origin;
             tokio::spawn(async move {
                 Self::execute_task(task.as_ref(), &ctx).await;
             });
@@ -33,7 +34,9 @@ impl TaskDispatcher {
     #[instrument(skip(task, ctx), fields(task_id = %task.id(), kind = task.kind()))]
     async fn execute_task(task: &dyn crate::Task, ctx: &TaskContext) {
         info!("task started");
-        match task.execute(ctx).await {
+        let result = task.execute(ctx).await;
+        
+        match &result {
             Ok(output) => {
                 info!(result = ?output.result, "task completed");
             }
@@ -43,6 +46,11 @@ impl TaskDispatcher {
             Err(e) => {
                 error!(error = %e, "task failed");
             }
+        }
+
+        // Send the result back if a channel is provided
+        if let Some(tx) = &ctx.result_tx {
+            let _ = tx.send((task.id(), ctx.origin, result));
         }
     }
 }

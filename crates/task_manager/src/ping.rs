@@ -22,8 +22,13 @@ impl Default for PingTask {
 impl PingTask {
     /// Create a new PingTask.
     pub fn new() -> Self {
+        Self::with_id(Uuid::new_v4())
+    }
+
+    /// Create a PingTask with a specific ID.
+    pub fn with_id(id: Uuid) -> Self {
         Self {
-            id: Uuid::new_v4(),
+            id,
             status: TaskStatus::Pending,
         }
     }
