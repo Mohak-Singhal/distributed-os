@@ -37,4 +37,15 @@ impl TaskRegistry {
             Err(TaskError::ExecutionFailed(format!("No task handler registered for kind: {}", request.kind)))
         }
     }
+
+    /// Return a list of capabilities based on registered task kinds.
+    pub fn get_capabilities(&self) -> Vec<dos_core::Capability> {
+        let mut caps = Vec::new();
+        for kind in self.factories.keys() {
+            if let Ok(cap) = kind.parse::<dos_core::Capability>() {
+                caps.push(cap);
+            }
+        }
+        caps
+    }
 }

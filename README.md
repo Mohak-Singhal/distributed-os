@@ -1,6 +1,6 @@
-# Personal Distributed Operating System (PDOS) — Runtime v0.1
+# Personal Distributed Operating System (PDOS) — Runtime v0.3
 
-A production-grade, secure, and cross-platform networking foundation designed to make all your devices behave as a single, unified computer.
+**A production-grade, secure, cross-platform runtime for building a personal distributed operating system.**
 
 This is a private repository designed with open-source quality standards.
 
@@ -8,22 +8,26 @@ This is a private repository designed with open-source quality standards.
 
 Imagine if your macOS laptop, Android phone, Windows workstation, Linux server, and future browser agents worked together as a single operating system. Instead of talking to specific devices using platform-dependent protocols, the system treats every endpoint as a **Node** and advertises its **Capabilities** (e.g., Compute, Storage, AI Models, Camera, Remote Execution).
 
-**Version 0.1** establishes the zero-trust networking foundation:
-* **Node Identity:** Permanent cryptographic identifiers per device (Ed25519).
-* **Discovery:** Real-time online/offline registration.
-* **Message Routing:** A secure relay routing versioned packets.
-* **Native Cross-Platform Execution:** A shared Rust runtime running natively on macOS (CLI) and Android (JNI Background Service).
+* **Version 0.1** established the zero-trust networking foundation: cryptographic Ed25519 identity, real-time node registry, WebSocket packet routing, and a shared native Rust runtime.
+* **Version 0.2** establishes the **Secure Communication Layer**, allowing nodes to securely exchange system clipboard contents, trigger native system notifications, execute remote terminal commands, and transfer files.
+* **Version 0.3** delivers the **Consumer Experience Layer**: a premium monochrome Control Hub UI, production-grade bidirectional file transfer (streaming binary, no encoding overhead), Android share sheet integration, per-transfer Accept/Decline consent, SHA-256 integrity verification, and a real-time activity log.
 
 ```text
-                PDOS Runtime
-
-          ┌──────── Relay ────────┐
-          │                       │
-   Desktop Runtime         Android Runtime
-          │                       │
-          └──── Shared Rust Runtime ────┘
-                     │
-          Identity • Tasks • Search
+                           PDOS Runtime v0.2
+                 CLI
+                  │
+                  ▼
+            Task Manager
+                  │
+                  ▼
+              Relay Hub
+        ┌─────────┴─────────┐
+        ▼                   ▼
+ Desktop Host         Android Host
+        │                   │
+        └──── Shared Rust Runtime ────┘
+                                 │
+              Clipboard • Notifications • Terminal • Files
 ```
 
 ## Repository Architecture
@@ -50,7 +54,76 @@ The project uses a Cargo workspace to maintain clean boundaries between componen
 │   └── task_manager/     # Dynamic task dispatch subsystem
 ```
 
-## Technical Implementation
+## Technical Implementation (v0.2)
+
+Every action in PDOS is modeled as a `Task` dispatched dynamically across the network. The standard execution flow looks like this:
+
+```text
+Mac CLI
+   ↓
+TerminalTask
+   ↓
+Relay Hub
+   ↓
+Android Runtime
+   ↓
+Task Registry
+   ↓
+TerminalProvider
+   ↓
+OS Command
+   ↓
+stdout
+   ↓
+Relay Hub
+   ↓
+Mac CLI
+```
+
+Version 0.2 expands the core JNI and desktop providers:
+
+### 1. Clipboard Synchronization
+* **Desktop**: Leverages native cross-platform clipboard listeners through the `arboard` library, running inside asynchronous Tokio blocking threads to interface with OS window systems.
+* **Android**: Uses JNI to access Android’s native `ClipboardManager` via a main thread loop handler callback.
+* **Commands**:
+  ```bash
+  dos clipboard set <target_node_id> "Hello World"
+  dos clipboard get <target_node_id>
+  ```
+
+### 2. Native System Notifications
+* **macOS**: Leverages AppleScript (`osascript`) headlessly to spawn standard system banners.
+* **Android**: Interfaces with Android’s `NotificationCompat` through the JNI host interface, ensuring alerts display even when the application is minimized or backgrounded.
+* **Commands**:
+  ```bash
+  dos notify <target_node_id> "Subject Line" "Message body text"
+  ```
+
+### 3. Remote Terminal Execution
+* **Execution**: Commands are executed as child processes under the permissions of the running agent. Version 0.2 is intended for trusted, paired devices. Future versions may introduce command policies and stronger execution isolation.
+* **Commands**:
+  ```bash
+  dos exec <target_node_id> "ls -la"
+  dos exec <target_node_id> "uname -a"
+  ```
+
+### 4. Base64 Chunked File Transfer
+* **Relay-mediated file transfer**: Files are chunked, base64-encoded, and transferred through the existing WebSocket task protocol. Future versions will support direct peer-to-peer transfers for improved throughput.
+* **Commands**:
+  ```bash
+  dos send-file <target_node_id> ./local_file.txt /remote/path/file.txt
+  dos get-file <target_node_id> /remote/path/file.txt ./local_file.txt
+  ```
+
+### 5. Resilient Connection Infrastructure
+* **Bidirectional Heartbeat Acknowledgement**: The relay replies to agent heartbeats with a `HeartbeatAck` frame. If the agent does not receive an acknowledgement within 35 seconds, it automatically assumes the TCP socket is half-open (dead) and triggers a clean reconnection.
+* **Registry Isolation**: Uses unique connection IDs (UUIDs) for each WebSocket session, preventing overlapping handler tasks from prematurely removing new connections from the relay registry (preventing the `target_offline` error during quick reconnection cycles).
+* **Automatic Reconnection**: Overhauled the native Rust agent run loop to prevent thread exit on standard connection closures. The agent automatically retries connecting to the relay URL every 5 seconds.
+* **Android Service Lifecycle Stability**: Overhauled the Android foreground service runtime to cleanly terminate previous threads and free system resources before spawning new agents.
+
+---
+
+## Technical Foundation (v0.1)
 
 ### 1. Cryptographic Identity & Persistence
 Every node generates an **Ed25519 keypair** on its first run. 
@@ -80,36 +153,7 @@ Node becomes Searchable
 Accept & Execute Tasks
 ```
 
-### 3. Capability Advertisement
-Nodes advertise exactly what they are capable of. The `Capability` system allows future versions of the PDOS engine to route workloads automatically. 
-When a node connects to the relay, it advertises capabilities such as:
-```rust
-pub enum Capability {
-    Compute,
-    FileStorage,
-    Search,
-    Docker,
-    AiModel,
-    Browser,
-    Notifications,
-    Camera,
-    Microphone,
-    Terminal,
-    RemoteExecution,
-}
-```
-
-### 4. Node Registry
-The relay maintains an in-memory registry of currently connected nodes. Persistent node identity and pairing information are stored locally by each node (the relay is not a database). Each connected node record contains:
-- **Node ID**
-- **Name**
-- **Platform**
-- **Version**
-- **Status**
-- **Capabilities**
-- **Last Heartbeat**
-
-### 5. Universal Search
+### 3. Universal Search
 The Universal Search subsystem provides a common interface for discovering nodes across the distributed network. 
 *Universal Search is intentionally limited to node discovery in Version 0.1. Future versions will extend the same interface to files, containers, browser tabs, AI models, and other distributed resources.*
 
@@ -126,127 +170,113 @@ Supported search fields:
 dos search mac
 dos search android
 dos search online
-dos search capability=compute
+dos search capability=clipboard
 ```
 
 **Returns:**
 ```text
 Found 1 devices:
-  [1.0] MacBook Air (mac - online) v0.1.0 ID: 732626c7...
-      Capabilities: [compute, search]
+  [1.0] Pixel 8 (android - online) v0.1.0 ID: dd23f0d5...
+      Capabilities: [notifications, clipboard, terminal, file_transfer]
 ```
 
-### 6. Universal Task Manager
-Everything in PDOS is represented as a Task. A central part of the V0.1 architecture is the fully extensible `dos-task-manager`.
+---
 
-Version 0.1 includes:
-- `PingTask`
-- `PairTask`
-- `SearchTask`
+## Current Scope
 
-Future versions will add:
-- `FileTransferTask`
-- `RemoteCommandTask`
-- `DockerTask`
-- `AIInferenceTask`
-
-Without changing the underlying networking layer, new capabilities only require writing a new struct that implements the `Task` trait. 
-
-**Execution Flow:**
-```text
-CLI / Agent
-      ↓
-TaskRequest
-      ↓
-Task Registry
-      ↓
-Task Dispatcher
-      ↓
-Executor
-      ↓
-TaskResult
-      ↓
-Relay
-      ↓
-Requester
-```
-When a `TaskRequest` arrives over the wire, the runtime dynamically resolves the task type against a `TaskRegistry`, instantiates the corresponding command, enqueues it to a `TaskDispatcher`, and automatically routes the result back to the caller. Both the CLI (which acts as a Client) and the Android/Desktop daemons (which act as Agents) rely on the exact same Task Manager abstractions.
-
-### 7. Native Android Architecture
-Instead of using Termux or emulation, the Android implementation is a true native app.
-* **Rust Engine:** The shared `dos-runtime` is compiled to `arm64-v8a` and managed by a native Tokio multi-threaded runtime.
-* **JNI Bridge:** A custom interface bridges the Rust engine and the Android JVM.
-* **Foreground Service:** The node runs as a persistent Android Foreground Service, ensuring the OS doesn't kill the WebSocket connection when the screen is locked.
-* **Reactive UI:** The Kotlin UI layer uses `StateFlow` to react in real-time to connection status and error events streamed from the Rust backend.
-
-## Current Scope (v0.1)
-
-**Implemented**
-- [x] Node Identity
+**Infrastructure**
 - [x] Relay
-- [x] Pairing
 - [x] Registry
 - [x] Heartbeats
-- [x] Universal Search (Nodes)
-- [x] Universal Task Manager
-- [x] Android Runtime
-- [x] Desktop Runtime
+- [x] Search
 
-**Not Yet Implemented**
-- [ ] File Transfer
-- [ ] Remote Terminal
-- [ ] Distributed Compute
-- [ ] Docker Nodes
-- [ ] Browser Nodes
-- [ ] AI Task Scheduling
-- [ ] Synchronization
+**Security**
+- [x] Ed25519 Identity
+- [x] Pairing
+- [x] Authentication
+
+**Communication**
+- [x] Clipboard
+- [x] Notifications
+- [x] Terminal
+- [x] File Transfer
+
+**Host Support**
+✓ macOS
+✓ Android
+• Linux (In Progress)
+• Windows (In Progress)
+
+---
+
+## Roadmap
+
+**v0.3**
+- Remote Desktop
+- Keyboard
+- Mouse
+
+**v0.4**
+- Docker Nodes
+- Browser Nodes
+- Distributed Compute
+
+**v1.0**
+- AI Task Scheduling
+- Unified Personal Distributed OS
+
+---
 
 ## Validation & Testing (End-to-End)
 
-You can spin up the network locally to verify cross-device communication.
+You can spin up the network locally or across physical networks to verify cross-device communication.
 
-### 1. Start the Relay (Mac)
-Run the central routing hub on your host machine:
+### 1. Local loopback verification (macOS)
+To run the automated loopback integration suite:
 ```bash
-cargo run -p dos-relay
+./scripts/test_v0.2.sh
 ```
 
-### 2. Launch the Android Node
+### 2. Cross-Device Verification (macOS ↔ Android)
+
+#### A. Start the Relay & Mac Agent (Mac)
+Run the routing hub and local desktop agent on your host machine:
+```bash
+# Terminal 1 (Mac)
+cargo run --bin dos-relay
+
+# Terminal 2 (Mac)
+cargo run --bin dos-desktop
+```
+
+#### B. Build & Deploy the Android Agent
 1. Connect your Android device via USB/ADB.
-2. Ensure you are on the same local Wi-Fi network as your Mac.
-3. Build and deploy the native app:
+2. Ensure you are on the same local Wi-Fi network.
+3. Build the native JNI libraries and install the app package:
 ```bash
 cd agents/android
-cargo ndk -t arm64-v8a -o ./app/src/main/jniLibs build -p dos-android
+cargo ndk -t arm64-v8a -o ./app/src/main/jniLibs build
 ./gradlew installDebug
 ```
-4. Open the app on your phone and tap **Start Node**.
+4. Launch the **PDOS Node** app on your phone, verify your Mac's IP (e.g. `ws://192.168.1.3:7890`), and tap **Start Node**.
 
-### 3. Inspect the Network (Mac CLI)
-From your Mac, search the network for your Android phone and interact with it:
+#### C. Control your Android Phone from macOS CLI
+Open a terminal on your Mac and run the controller tasks:
 ```bash
-# See all connected devices (should list your Mac CLI and the Android phone)
-cargo run -p dos-cli -- search ""
-```
-**Returns:**
-```text
-Found 1 devices:
-  [1.0] Mohak's S23 (android - online) v0.1.0 ID: dd23f0d5-5c31-597f-9942-525e211c4bb9
-      Capabilities: [compute, notifications, camera]
-```
+# Discover devices (look for the Android platform node ID)
+cargo run --bin dos -- search ""
 
-```bash
-# Ping the Android phone to test round-trip latency
-cargo run -p dos-cli -- ping <ANDROID_NODE_ID>
-```
-**Returns:**
-```text
-Reply from dd23f0d5-5c31-597f-9942-525e211c4bb9: time=82.1ms result={"message":"pong","success":true}
-```
+# Send a native notification to Android
+cargo run --bin dos -- notify <ANDROID_NODE_ID> "Mac Command" "Hello Android OS!"
 
-```bash
-# Pair with the Android phone
-cargo run -p dos-cli -- pair <ANDROID_NODE_ID>
+# Set Android's system clipboard
+cargo run --bin dos -- clipboard set <ANDROID_NODE_ID> "Sent from Mac!"
+
+# Run a shell command on Android
+cargo run --bin dos -- exec <ANDROID_NODE_ID> "id"
+
+# Send a file to Android's internal app files storage
+cargo run --bin dos -- send-file <ANDROID_NODE_ID> /tmp/mac_file.txt /data/data/com.dos.agent/files/transferred.txt
 ```
 
 ## License

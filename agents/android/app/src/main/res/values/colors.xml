@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="seed">#00E5FF</color>
+
+    <!-- MD3 Dark theme (fallback for pre-Android 12) brandCyan seed -->
+    <color name="md_primary">#00E5FF</color>
+    <color name="md_on_primary">#003840</color>
+    <color name="md_primary_container">#00515C</color>
+    <color name="md_on_primary_container">#97F0FF</color>
+    <color name="md_secondary">#00BCD4</color>
+    <color name="md_on_secondary">#38006B</color>
+    <color name="md_secondary_container">#003D47</color>
+    <color name="md_on_secondary_container">#97F0FF</color>
+    <color name="md_tertiary">#FFAB00</color>
+    <color name="md_on_tertiary">#3E2D00</color>
+    <color name="md_tertiary_container">#5A4300</color>
+    <color name="md_on_tertiary_container">#FFDE9A</color>
+    <color name="md_error">#FF1744</color>
+    <color name="md_on_error">#60000D</color>
+    <color name="md_error_container">#9C001A</color>
+    <color name="md_on_error_container">#FFDAD6</color>
+    <color name="md_background">#0A0A0F</color>
+    <color name="md_on_background">#E2E2E9</color>
+    <color name="md_surface">#0A0A0F</color>
+    <color name="md_on_surface">#E2E2E9</color>
+    <color name="md_surface_variant">#2A2A3A</color>
+    <color name="md_on_surface_variant">#9E9EB0</color>
+    <color name="md_outline">#3A3A4A</color>
+    <color name="md_outline_variant">#2A2A3A</color>
+    <color name="md_inverse_surface">#E2E2E9</color>
+    <color name="md_inverse_on_surface">#0A0A0F</color>
+    <color name="md_surface_tint">#00E5FF</color>
+    <color name="md_surface_container">#14141B</color>
+    <color name="md_surface_container_low">#0F0F16</color>
+    <color name="md_surface_container_high">#1A1A28</color>
+    <color name="md_surface_bright">#3A3A42</color>
+    <color name="md_surface_dim">#0A0A0F</color>
+
+    <!-- Semantic -->
+    <color name="statusSuccess">#00E676</color>
+    <color name="statusWarning">#FFAB00</color>
+    <color name="statusError">#FF1744</color>
+    <color name="statusBlue">#42A5F5</color>
+    <color name="statusPurple">#AB47BC</color>
+    <color name="statusYellow">#FFC107</color>
+    <color name="brandCyan">#00FFFE</color>
+    <color name="brandIndigo">#00BCD4</color>
+    <color name="brandEmerald">#00E676</color>
+    <color name="brandRed">#FF1744</color>
+
+    <!-- Light theme aliases for dynamic color -->
+    <color name="light_background">#FFFBFE</color>
+    <color name="light_on_background">#1C1B1F</color>
+    <color name="light_surface">#FFFBFE</color>
+    <color name="light_on_surface">#1C1B1F</color>
+    <color name="light_surface_variant">#E7E0EC</color>
+    <color name="light_on_surface_variant">#49454F</color>
+    <color name="light_outline">#79747E</color>
+    <color name="light_primary">#006874</color>
+    <color name="light_on_primary">#FFFFFF</color>
+    <color name="light_secondary">#625B71</color>
+    <color name="light_on_secondary">#FFFFFF</color>
+    <color name="light_tertiary">#7D5260</color>
+    <color name="light_on_tertiary">#FFFFFF</color>
+    <color name="light_error">#B3261E</color>
+    <color name="light_on_error">#FFFFFF</color>
+
+    <!-- macOS-matching opacity colors -->
+    <color name="cardFill">#0AE2E2E9</color>
+    <color name="cardStroke">#0FE2E2E9</color>
+    <color name="settingsRowBg">#08E2E2E9</color>
+    <color name="tabSelectedBg">#2600FFFE</color>
+
+    <!-- Legacy aliases for backward compatibility with old layouts -->
+    <color name="textPrimary">@color/md_on_surface</color>
+    <color name="textSecondary">@color/md_on_surface_variant</color>
+    <color name="textTertiary">#80E2E2E9</color>
+    <color name="background">@color/md_background</color>
+    <color name="surface">@color/md_surface</color>
+    <color name="primary">@color/md_primary</color>
+    <color name="onPrimary">@color/md_on_primary</color>
+    <color name="primaryContainer">@color/md_primary_container</color>
+    <color name="statusGreen">#00E676</color>
+    <color name="statusRed">#FF1744</color>
+    <color name="statusOrange">#FFAB00</color>
+    <color name="surfaceElevated">@color/md_surface_container_high</color>
+    <color name="divider">@color/md_outline_variant</color>
+    <color name="highlight">#15FFFFFF</color>
+    <color name="darkTextPrimary">#E2E2E9</color>
+</resources>

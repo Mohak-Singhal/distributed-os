@@ -48,8 +48,7 @@ impl Task for ClientSearchTask {
         while let Ok(Some(msg)) = self.conn.recv().await {
             if let Message::SearchResponse(resp) = msg {
                 return Ok(TaskOutput {
-                    result: serde_json::to_value(resp.results)
-                        .unwrap_or(serde_json::Value::Null),
+                    result: serde_json::to_value(resp.results).unwrap_or(serde_json::Value::Null),
                 });
             }
         }
@@ -57,7 +56,9 @@ impl Task for ClientSearchTask {
     }
 }
 
-pub async fn run_search(query: String) -> anyhow::Result<()> {
+pub async fn run_search_raw(
+    query: String,
+) -> anyhow::Result<Vec<dos_protocol::message::SearchResult>> {
     let (conn, cli_id) = crate::net::connect_and_identify().await?;
 
     let (res_tx, mut res_rx) = tokio::sync::mpsc::unbounded_channel();
@@ -67,7 +68,7 @@ pub async fn run_search(query: String) -> anyhow::Result<()> {
         origin: None,
         result_tx: Some(res_tx),
     };
-    
+
     let dispatcher = TaskDispatcher::new(task_rx, context);
     tokio::spawn(dispatcher.run());
 
@@ -77,23 +78,37 @@ pub async fn run_search(query: String) -> anyhow::Result<()> {
     if let Some((_id, _origin, result)) = res_rx.recv().await {
         match result {
             Ok(output) => {
-                let results: Vec<dos_protocol::message::SearchResult> = 
+                let results: Vec<dos_protocol::message::SearchResult> =
                     serde_json::from_value(output.result).unwrap_or_default();
-                    
-                println!("Found {} devices:", results.len());
-                for r in results {
-                    let caps: Vec<String> = r.capabilities.iter().map(|c| c.to_string()).collect();
-                    println!(
-                        "  [{:.1}] {} ({} - {}) v{} ID: {}\n      Capabilities: [{}]",
-                        r.score, r.name, r.platform, r.status, r.version, r.node_id, caps.join(", ")
-                    );
-                }
+                return Ok(results);
             }
-            Err(e) => {
-                eprintln!("Search error: {}", e);
-            }
+            Err(e) => return Err(anyhow::anyhow!("Search error: {}", e)),
         }
     }
+    Err(anyhow::anyhow!("No response from search"))
+}
 
+pub async fn run_search(query: String) -> anyhow::Result<()> {
+    match run_search_raw(query).await {
+        Ok(results) => {
+            println!("Found {} devices:", results.len());
+            for r in results {
+                let caps: Vec<String> = r.capabilities.iter().map(|c| c.to_string()).collect();
+                println!(
+                    "  [{:.1}] {} ({} - {}) v{} ID: {}\n      Capabilities: [{}]",
+                    r.score,
+                    r.name,
+                    r.platform,
+                    r.status,
+                    r.version,
+                    r.node_id,
+                    caps.join(", ")
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!("Search error: {}", e);
+        }
+    }
     Ok(())
 }

@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Circle glow -->
+    <path
+        android:fillColor="#1A1A28"
+        android:pathData="M60,60m-48,0a48,48 0,1 1,96 0a48,48 0,1 1,-96 0" />
+    <!-- Inner ring -->
+    <path
+        android:strokeColor="#2A2A3E"
+        android:strokeWidth="1.5"
+        android:fillColor="#00000000"
+        android:pathData="M60,60m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0" />
+    <!-- Center dot -->
+    <path
+        android:fillColor="#00E5FF"
+        android:fillAlpha="0.4"
+        android:pathData="M60,60m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <!-- Pulse rings -->
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeAlpha="0.15"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:pathData="M60,60m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0" />
+    <path
+        android:strokeColor="#00E5FF"
+        android:strokeAlpha="0.1"
+        android:strokeWidth="1"
+        android:fillColor="#00000000"
+        android:pathData="M60,60m-16,0a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
+    <!-- Small orbiting dots -->
+    <path
+        android:fillColor="#00E5FF"
+        android:fillAlpha="0.6"
+        android:pathData="M36,42m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <path
+        android:fillColor="#00E5FF"
+        android:fillAlpha="0.6"
+        android:pathData="M80,38m-2.5,0a2.5,2.5 0,1 1,5 0a2.5,2.5 0,1 1,-5 0" />
+    <path
+        android:fillColor="#40C4FF"
+        android:fillAlpha="0.4"
+        android:pathData="M42,82m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+    <path
+        android:fillColor="#00E5FF"
+        android:fillAlpha="0.4"
+        android:pathData="M78,78m-2,0a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+</vector>

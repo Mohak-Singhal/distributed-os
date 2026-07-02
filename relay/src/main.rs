@@ -32,6 +32,14 @@ async fn run() -> anyhow::Result<()> {
     let listener = TcpListener::bind(&addr).await?;
     let registry = Registry::new();
 
+    // Start UDP discovery advertiser
+    let advertiser = dos_discovery::udp::RelayAdvertiser::new(DEFAULT_RELAY_PORT);
+    tokio::spawn(async move {
+        if let Err(e) = advertiser.run().await {
+            tracing::error!(error = %e, "UDP discovery advertiser failed");
+        }
+    });
+
     println!("╔══════════════════════════════════════════╗");
     println!("║            Relay Started                 ║");
     println!("╚══════════════════════════════════════════╝");

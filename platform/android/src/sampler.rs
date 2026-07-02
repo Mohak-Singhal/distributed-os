@@ -26,6 +26,7 @@ impl HeartbeatSampler for AndroidSampler {
             platform: Platform::Android,
             version: self.version.clone(),
             status: NodeStatus::Online,
+            capabilities: vec![],
             timestamp: Utc::now(),
         })
     }

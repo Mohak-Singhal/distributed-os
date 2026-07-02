@@ -14,6 +14,9 @@
 
 pub mod error;
 pub mod method;
+pub mod mdns;
+pub mod udp;
 
 pub use error::DiscoveryError;
 pub use method::{DiscoveredNode, Discoverer, DiscoveryMethod};
+

@@ -1,0 +1,5 @@
+relay_url = "ws://127.0.0.1:7890"
+discovery_port = 5333
+enable_mdns = true
+listen_port = 7890
+data_dir = "/tmp/pdos_data"

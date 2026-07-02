@@ -12,6 +12,8 @@ use dos_storage::{Database, SettingsRepository, SqliteSettingsRepository};
 
 use dos_runtime::Agent;
 
+pub mod providers;
+
 fn main() -> anyhow::Result<()> {
     fmt()
         .with_env_filter(
@@ -42,11 +44,38 @@ async fn run() -> anyhow::Result<()> {
         "agent initialised"
     );
 
+    let clipboard = std::sync::Arc::new(providers::clipboard::DesktopClipboardProvider::new());
+    let notifications = std::sync::Arc::new(providers::notifications::DesktopNotificationsProvider::new());
+    let terminal = std::sync::Arc::new(providers::terminal::DesktopTerminalProvider::new());
+    let file = std::sync::Arc::new(providers::file::DesktopFileProvider::new());
+    
+    let mut registry = dos_task_manager::TaskRegistry::new();
+    registry.register("ping", |req| {
+        Ok(Box::new(dos_task_manager::PingTask::with_id(req.task_id.0)))
+    });
+    
+    registry.register("clipboard", move |req| {
+        Ok(Box::new(dos_task_manager::ClipboardTask::new(&req, clipboard.clone())?))
+    });
+
+    registry.register("notifications", move |req| {
+        Ok(Box::new(dos_task_manager::NotificationsTask::new(&req, notifications.clone())?))
+    });
+
+    registry.register("terminal", move |req| {
+        Ok(Box::new(dos_task_manager::TerminalTask::new(&req, terminal.clone())?))
+    });
+
+    registry.register("file_transfer", move |req| {
+        Ok(Box::new(dos_task_manager::FileTask::new(&req, file.clone())?))
+    });
+
     let agent = Agent {
         identity,
         config,
         platform: detect_platform(),
         event_tx: None,
+        registry,
     };
 
     agent.run().await

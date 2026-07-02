@@ -18,3 +18,7 @@ thiserror    = { workspace = true }
 uuid         = { workspace = true }
 chrono       = { workspace = true }
 async-trait  = "0.1"
+serde = { workspace = true, features = ["derive"] }
+base64 = "0.22.1"
+flate2 = "1.1.9"
+

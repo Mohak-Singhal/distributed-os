@@ -18,6 +18,7 @@ dos-protocol     = { workspace = true }
 dos-networking   = { workspace = true }
 dos-storage      = { workspace = true }
 dos-crypto       = { workspace = true }
+dos-discovery    = { workspace = true }
 tokio            = { workspace = true }
 tokio-tungstenite = { workspace = true }
 futures-util     = { workspace = true }

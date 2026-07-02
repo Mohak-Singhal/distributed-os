@@ -25,6 +25,7 @@ pub struct ConnectedNode {
     pub status: NodeStatus,
     pub last_seen: chrono::DateTime<Utc>,
     pub tx: NodeTx,
+    pub connection_id: uuid::Uuid,
 }
 
 /// Thread-safe registry of all connected nodes.
@@ -48,6 +49,7 @@ impl Registry {
         capabilities: Vec<Capability>,
         payload: &HeartbeatPayload,
         tx: NodeTx,
+        connection_id: uuid::Uuid,
     ) {
         let mut nodes = self.nodes.write().await;
         nodes.insert(
@@ -61,6 +63,7 @@ impl Registry {
                 status: NodeStatus::Online,
                 last_seen: payload.timestamp,
                 tx,
+                connection_id,
             },
         );
     }
@@ -75,9 +78,14 @@ impl Registry {
         }
     }
 
-    /// Remove a node on disconnect.
-    pub async fn remove(&self, node_id: NodeId) {
-        self.nodes.write().await.remove(&node_id);
+    /// Remove a node on disconnect if the connection ID matches.
+    pub async fn remove(&self, node_id: NodeId, connection_id: uuid::Uuid) {
+        let mut nodes = self.nodes.write().await;
+        if let Some(n) = nodes.get(&node_id) {
+            if n.connection_id == connection_id {
+                nodes.remove(&node_id);
+            }
+        }
     }
 
     /// Return a snapshot of all connected nodes for a DeviceListResponse.
@@ -130,6 +138,7 @@ impl Registry {
     }
 
     /// Log current connected nodes.
+    #[allow(dead_code)]
     pub async fn log_state(&self) {
         let nodes = self.nodes.read().await;
         info!(count = nodes.len(), "registry state");

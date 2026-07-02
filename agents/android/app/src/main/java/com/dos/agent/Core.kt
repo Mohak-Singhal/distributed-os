@@ -3,6 +3,9 @@ package com.dos.agent
 interface NodeCallback {
     fun onStateChanged(stateJson: String)
     fun onLog(level: Int, message: String)
+    fun getClipboard(): String
+    fun setClipboard(text: String)
+    fun showNotification(title: String, body: String)
 }
 
 object Core {

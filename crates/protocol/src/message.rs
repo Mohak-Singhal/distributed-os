@@ -24,6 +24,8 @@ pub struct HeartbeatPayload {
     pub version: String,
     /// Current node status.
     pub status: NodeStatus,
+    /// Advertised capabilities.
+    pub capabilities: Vec<Capability>,
     /// Wall-clock time the heartbeat was created.
     pub timestamp: DateTime<Utc>,
 }
@@ -139,6 +141,83 @@ pub struct SearchResponse {
     pub results: Vec<SearchResult>,
 }
 
+// ── Session / Transfer ─────────────────────────────────────────────────────────
+
+/// Request to start a file transfer session with a peer.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionRequest {
+    /// The requesting node's ID.
+    pub from: NodeId,
+    /// The target node's ID.
+    pub to: NodeId,
+    /// Human-readable file name.
+    pub file_name: String,
+    /// File size in bytes.
+    pub file_size: u64,
+    /// Optional transfer ID for resume support.
+    pub transfer_id: Option<String>,
+    /// Suggested chunk size.
+    pub chunk_size: usize,
+    /// Whether parallel streams are requested.
+    pub parallel: bool,
+    /// Number of parallel streams requested.
+    pub parallel_streams: usize,
+}
+
+/// Response accepting a session request.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionAccept {
+    /// The responding node.
+    pub from: NodeId,
+    /// The original requester.
+    pub to: NodeId,
+    /// Assigned session ID (UUID).
+    pub session_id: String,
+    /// Agreed chunk size (negotiated down).
+    pub chunk_size: usize,
+    /// Whether parallelism was agreed.
+    pub parallel: bool,
+    /// Agreed number of parallel streams.
+    pub parallel_streams: usize,
+}
+
+/// Response rejecting a session request.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionReject {
+    /// The rejecting node.
+    pub from: NodeId,
+    /// The original requester.
+    pub to: NodeId,
+    /// Human-readable reason for rejection.
+    pub reason: String,
+}
+
+/// Progress update during an active session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionProgress {
+    /// Session identifier.
+    pub session_id: String,
+    /// Node sending the update.
+    pub from: NodeId,
+    /// Bytes transferred so far.
+    pub bytes_sent: u64,
+    /// Total bytes to transfer.
+    pub bytes_total: u64,
+    /// Current transfer speed.
+    pub speed_mbps: f64,
+}
+
+/// Close or cancel a session.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SessionClose {
+    /// Session to close.
+    pub session_id: String,
+    /// Node requesting the close.
+    pub from: NodeId,
+    /// Optional reason for closing.
+    pub reason: Option<String>,
+}
+
 // ── Device List ───────────────────────────────────────────────────────────────
 
 /// Request the full list of known nodes.
@@ -188,6 +267,8 @@ pub enum Message {
         /// Metrics payload.
         payload: HeartbeatPayload,
     },
+    /// Acknowledgment of a heartbeat.
+    HeartbeatAck,
     /// Initiate device pairing.
     PairRequest(PairRequest),
     /// Respond to a pairing request.
@@ -204,6 +285,16 @@ pub enum Message {
     DeviceListRequest(DeviceListRequest),
     /// Known nodes response.
     DeviceListResponse(DeviceListResponse),
+    /// Request to start a file transfer session.
+    SessionRequest(SessionRequest),
+    /// Accept a session request with agreed parameters.
+    SessionAccept(SessionAccept),
+    /// Reject a session request.
+    SessionReject(SessionReject),
+    /// Progress update during active transfer.
+    SessionProgress(SessionProgress),
+    /// Close or cancel a session.
+    SessionClose(SessionClose),
     /// Relay-level error (e.g. authentication failure, unknown target).
     Error {
         /// Short machine-readable code.
@@ -247,6 +338,29 @@ mod tests {
         let decoded = Message::from_json(&json).expect("deserialise");
         match decoded {
             Message::Error { code, .. } => assert_eq!(code, "not_found"),
+            other => panic!("unexpected variant: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn session_message_round_trip() {
+        let req = Message::SessionRequest(SessionRequest {
+            from: NodeId(Uuid::nil()),
+            to: NodeId(Uuid::new_v4()),
+            file_name: "photo.jpg".into(),
+            file_size: 1024,
+            transfer_id: None,
+            chunk_size: 65536,
+            parallel: true,
+            parallel_streams: 2,
+        });
+        let json = req.to_json().expect("serialise");
+        let decoded = Message::from_json(&json).expect("deserialise");
+        match decoded {
+            Message::SessionRequest(r) => {
+                assert_eq!(r.file_name, "photo.jpg");
+                assert_eq!(r.file_size, 1024);
+            }
             other => panic!("unexpected variant: {other:?}"),
         }
     }

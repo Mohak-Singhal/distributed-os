@@ -64,18 +64,21 @@ impl Connection for WsConnection {
 
     async fn recv(&self) -> Result<Option<Message>, NetworkError> {
         let mut stream = self.stream.lock().await;
-        match stream.next().await {
-            Some(Ok(WsMsg::Text(text))) => {
-                let envelope: dos_protocol::Envelope = serde_json::from_str(&text)
-                    .map_err(|e| NetworkError::Deserialisation(e.to_string()))?;
-                Ok(Some(envelope.message))
+        loop {
+            match stream.next().await {
+                Some(Ok(WsMsg::Text(text))) => {
+                    let envelope: dos_protocol::Envelope = serde_json::from_str(&text)
+                        .map_err(|e| NetworkError::Deserialisation(e.to_string()))?;
+                    return Ok(Some(envelope.message));
+                }
+                Some(Ok(WsMsg::Close(_))) | None => {
+                    self.connected.store(false, Ordering::Relaxed);
+                    return Ok(None);
+                }
+                // Skip Ping / Pong / Binary frames — don't break the loop
+                Some(Ok(_)) => continue,
+                Some(Err(e)) => return Err(NetworkError::WebSocket(e.to_string())),
             }
-            Some(Ok(WsMsg::Close(_))) | None => {
-                self.connected.store(false, Ordering::Relaxed);
-                Ok(None)
-            }
-            Some(Ok(_)) => Ok(None), // binary/ping frames — ignore
-            Some(Err(e)) => Err(NetworkError::WebSocket(e.to_string())),
         }
     }
 

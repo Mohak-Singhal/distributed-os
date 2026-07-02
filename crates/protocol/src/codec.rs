@@ -81,6 +81,7 @@ mod tests {
             platform: Platform::Mac,
             version: "0.1.0".into(),
             status: NodeStatus::Online,
+            capabilities: vec![],
             timestamp: Utc::now(),
         };
         let msg = builder::heartbeat(from, payload);

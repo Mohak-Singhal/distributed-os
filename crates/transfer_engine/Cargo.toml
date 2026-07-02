@@ -1,0 +1,42 @@
+[package]
+name = "dos-transfer-engine"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Core transfer engine — the brain of all file transfers"
+
+[lib]
+name = "transfer_engine"
+path = "src/lib.rs"
+
+[features]
+default = []
+tls = ["dep:rustls", "dep:tokio-rustls", "dep:rcgen"]
+quic = ["dep:quinn", "dep:rustls", "dep:rcgen"]
+
+[dependencies]
+tokio = { workspace = true }
+tracing = { workspace = true }
+anyhow = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+zip = "2"
+sha2 = "0.10.9"
+memmap2 = "0.9.11"
+libc = "0.2"
+core_affinity = "0.8"
+num_cpus = "1"
+async-trait = "0.1.89"
+lazy_static = "1.5.0"
+getrandom = "0.2"
+whoami = "1"
+dirs = "5"
+local-ip-address = "0.4"
+quinn = { version = "0.11", optional = true }
+rustls = { version = "0.23.41", optional = true, features = ["ring"] }
+rcgen = { version = "0.13", optional = true }
+tokio-rustls = { version = "0.26", optional = true }

@@ -11,15 +11,18 @@ members = [
     "crates/runtime",
     "crates/search",
     "crates/crypto",
-    "agents/desktop",
+    "crates/transfer_engine",
     "agents/android",
+    "agents/desktop",
+    "agents/desktop-ui",
     "platform/mac",
     "platform/windows",
     "platform/linux",
     "platform/android",
     "relay",
-    "cli", "crates/runtime",
+    "cli",
 ]
+
 resolver = "2"
 
 [workspace.package]
@@ -83,6 +86,7 @@ dos-storage      = { path = "crates/storage" }
 dos-task-manager = { path = "crates/task_manager" }
 dos-search       = { path = "crates/search" }
 dos-crypto       = { path = "crates/crypto" }
+dos-transfer-engine = { path = "crates/transfer_engine" }
 dos-platform-mac     = { path = "platform/mac" }
 dos-platform-windows = { path = "platform/windows" }
 dos-platform-linux   = { path = "platform/linux" }

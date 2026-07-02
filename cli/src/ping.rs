@@ -79,12 +79,12 @@ pub async fn run_ping(target_id: &str) -> anyhow::Result<()> {
         origin: None,
         result_tx: Some(res_tx),
     };
-    
+
     let dispatcher = TaskDispatcher::new(task_rx, context);
     tokio::spawn(dispatcher.run());
 
     let task = Arc::new(ClientPingTask::new(node_id, cli_id, conn));
-    
+
     let start = Instant::now();
     task_queue.submit(task, None).await?;
 
@@ -93,7 +93,10 @@ pub async fn run_ping(target_id: &str) -> anyhow::Result<()> {
         let duration = start.elapsed();
         match result {
             Ok(output) => {
-                println!("Reply from {}: time={:?} result={}", node_id, duration, output.result);
+                println!(
+                    "Reply from {}: time={:?} result={}",
+                    node_id, duration, output.result
+                );
             }
             Err(e) => {
                 eprintln!("Error: {}", e);
@@ -103,4 +106,3 @@ pub async fn run_ping(target_id: &str) -> anyhow::Result<()> {
 
     Ok(())
 }
-

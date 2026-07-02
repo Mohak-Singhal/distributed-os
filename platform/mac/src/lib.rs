@@ -8,6 +8,7 @@
 #![deny(clippy::expect_used)]
 #![deny(clippy::panic)]
 
+/// macOS system metric sampler.
 #[cfg(target_os = "macos")]
 pub mod sampler;
 

@@ -6,3 +6,31 @@
 *.db-wal
 .DS_Store
 sqlx-data.json
+
+# Benchmarks
+/benchmarks/
+**/benchmarks/
+
+# Build and cache directories
+/binary_cache/
+agents/android/build/
+agents/android/app/build/
+agents/mac/PDOS/build/
+
+# Telemetry and stress test outputs
+/stress_test_output/
+*.log
+
+# Scratch folders
+/scratch/
+
+# macOS App Build and Bundles
+mac-app/.build/
+*.app/
+
+# Gradle & Python cache
+.gradle/
+**/__pycache__/
+
+# All build targets
+**/target/

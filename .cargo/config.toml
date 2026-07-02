@@ -1,5 +1,6 @@
 [build]
 incremental = true
+rustflags = ["--cfg", "tokio_unstable"]
 
 [profile.dev]
 opt-level = 0
@@ -11,6 +12,14 @@ opt-level = 3
 lto = "thin"
 codegen-units = 1
 strip = "symbols"
+
+[target.aarch64-linux-android]
+linker = "aarch64-linux-android26-clang"
+ar = "aarch64-linux-android-ar"
+
+[target.armv7-linux-androideabi]
+linker = "armv7a-linux-androideabi26-clang"
+ar = "armv7a-linux-androideabi-ar"
 
 [alias]
 ck = "check --workspace"

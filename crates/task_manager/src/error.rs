@@ -20,4 +20,8 @@ pub enum TaskError {
     /// A required dependency (storage, network) was unavailable.
     #[error("dependency unavailable: {0}")]
     DependencyUnavailable(String),
+
+    /// The task request was invalid or malformed.
+    #[error("invalid request: {0}")]
+    InvalidRequest(String),
 }

@@ -16,16 +16,31 @@
 
 pub mod dispatcher;
 pub mod error;
+/// Clipboard task implementation.
+pub mod clipboard;
 /// Ping task implementation.
 pub mod ping;
 pub mod queue;
 /// Task registry implementation.
 pub mod registry;
 pub mod task;
+/// Provider interfaces for platform implementations.
+pub mod providers;
+/// Notifications task implementation.
+pub mod notifications;
+/// Terminal task implementation.
+pub mod terminal;
+/// File transfer task implementation.
+pub mod file;
 
+pub use clipboard::ClipboardTask;
 pub use dispatcher::TaskDispatcher;
 pub use error::TaskError;
 pub use ping::PingTask;
 pub use queue::TaskQueue;
 pub use registry::TaskRegistry;
 pub use task::{Task, TaskContext, TaskOutput};
+pub use notifications::NotificationsTask;
+pub use terminal::TerminalTask;
+pub use file::FileTask;
+

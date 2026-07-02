@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Settings"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="24sp"
+        android:fontFamily="sans-serif-black"
+        android:layout_marginBottom="24dp" />
+
+    <!-- Auto Accept -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchAutoAccept"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="12dp"
+        android:text="Auto-accept files"
+        android:textColor="?attr/colorOnSurface"
+        android:fontFamily="sans-serif-medium" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Encryption -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchEncryption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="12dp"
+        android:text="TLS encryption"
+        android:textColor="?attr/colorOnSurface"
+        android:fontFamily="sans-serif-medium" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Zip on Receive -->
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/switchZip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingVertical="12dp"
+        android:text="Receive as ZIP"
+        android:textColor="?attr/colorOnSurface"
+        android:fontFamily="sans-serif-medium" />
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Device Name -->
+    <LinearLayout
+        android:id="@+id/rowDeviceName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingVertical="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Device name"
+            android:textColor="?attr/colorOnSurface"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tvSettingsDeviceName"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <View android:layout_width="match_parent" android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Clear History -->
+    <LinearLayout
+        android:id="@+id/rowClearHistory"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingVertical="12dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackground">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Clear history"
+            android:textColor="?attr/colorError"
+            android:fontFamily="sans-serif-medium" />
+
+        <TextView
+            android:id="@+id/tvHistoryCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+</LinearLayout>

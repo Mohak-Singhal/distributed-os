@@ -4,6 +4,7 @@ use chrono::Utc;
 use futures_util::{SinkExt, StreamExt};
 use tokio::sync::mpsc;
 use tokio_tungstenite::{connect_async, tungstenite::Message as WsMsg};
+use tokio::net::TcpListener;
 use tracing::{error, info, warn};
 
 use dos_common::{
@@ -15,14 +16,14 @@ use dos_crypto::NodeIdentity;
 use dos_protocol::{
     ids::NodeId,
     message::{DeviceListResponse, HeartbeatPayload},
-    builder::{device_list_request, heartbeat},
+    builder::{heartbeat},
     Codec, Envelope, Message,
 };
 
 #[derive(Debug, serde::Serialize)]
 #[serde(tag = "type", content = "data")]
 pub enum AgentEvent {
-    Connected,
+    Connected { relay_url: String },
     Disconnected,
     PairingRequested { from: String, code: String },
     PairingAccepted { by: String },
@@ -36,6 +37,7 @@ pub struct Agent {
     pub config: Config,
     pub platform: Platform,
     pub event_tx: Option<mpsc::UnboundedSender<AgentEvent>>,
+    pub registry: dos_task_manager::TaskRegistry,
 }
 
 impl Agent {
@@ -44,27 +46,108 @@ impl Agent {
         loop {
             info!(relay = %self.config.relay_url, "connecting to relay");
             match self.connect_and_run().await {
-                Ok(_) => break,
+                Ok(_) => {
+                    info!("connection closed normally — retrying in 5s");
+                    if let Some(tx) = &self.event_tx {
+                        let _ = tx.send(AgentEvent::Disconnected);
+                    }
+                }
                 Err(e) => {
                     let err_msg = format!("Connection error: {}", e);
                     error!(error = %e, "connection lost — retrying in 5s");
                     if let Some(tx) = &self.event_tx {
                         let _ = tx.send(AgentEvent::Error { message: err_msg });
                     }
-                    tokio::time::sleep(Duration::from_secs(5)).await;
                 }
             }
+            tokio::time::sleep(Duration::from_secs(5)).await;
         }
+        #[allow(unreachable_code)]
         Ok(())
     }
 
+    /// Run in P2P server mode — listen on node_port, accept incoming
+    /// WebSocket connections, and handle the protocol directly (no relay).
+    pub async fn serve(&self) -> anyhow::Result<()> {
+        let addr = format!("0.0.0.0:{}", self.config.node_port);
+        info!(addr = %addr, "starting P2P WebSocket server");
+        let listener = TcpListener::bind(&addr).await?;
+        
+        loop {
+            match listener.accept().await {
+                Ok((tcp, peer)) => {
+                    info!(peer = %peer, "incoming connection");
+                    let ws = tokio_tungstenite::accept_async(tcp).await?;
+                    if let Err(e) = self.accept_and_run(ws).await {
+                        error!(error = %e, "P2P session ended with error");
+                    }
+                }
+                Err(e) => {
+                    error!(error = %e, "accept failed — retrying in 1s");
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                }
+            }
+        }
+    }
+
+    async fn accept_and_run(&self, ws: tokio_tungstenite::WebSocketStream<tokio::net::TcpStream>) -> anyhow::Result<()> {
+        info!("P2P client connected ✓");
+        if let Some(tx) = &self.event_tx {
+            let _ = tx.send(AgentEvent::Connected { relay_url: format!("p2p://0.0.0.0:{}", self.config.node_port) });
+        }
+        self.run_event_loop(ws).await
+    }
+
     async fn connect_and_run(&self) -> anyhow::Result<()> {
-        let (ws, _) = connect_async(self.config.relay_url.as_str()).await?;
+        let mut relay_url = self.config.relay_url.clone();
+        
+        let needs_discovery = relay_url == "discover"
+            || relay_url.contains("discover")
+            || relay_url.is_empty();
+
+        let ws = if needs_discovery {
+            info!("Relay IP configured as 'discover'. Initiating UDP auto-discovery...");
+            if let Some(tx) = &self.event_tx {
+                let _ = tx.send(AgentEvent::Error { message: "Searching for relay...".to_string() });
+            }
+            if let Some(discovered) = dos_discovery::udp::discover_relay(Duration::from_secs(10)).await {
+                relay_url = format!("ws://{}", discovered);
+                info!(url = %relay_url, "auto-discovered relay URL");
+                connect_async(relay_url.as_str()).await?.0
+            } else {
+                return Err(anyhow::anyhow!("failed to auto-discover relay"));
+            }
+        } else {
+            match connect_async(relay_url.as_str()).await {
+                Ok((ws, _)) => ws,
+                Err(e) => {
+                    warn!(error = %e, url = %relay_url, "failed to connect to configured relay. Falling back to UDP discovery...");
+                    if let Some(tx) = &self.event_tx {
+                        let _ = tx.send(AgentEvent::Error { message: "Relay offline, searching local network...".to_string() });
+                    }
+                    if let Some(discovered) = dos_discovery::udp::discover_relay(Duration::from_secs(10)).await {
+                        relay_url = format!("ws://{}", discovered);
+                        info!(url = %relay_url, "auto-discovered relay URL as fallback");
+                        connect_async(relay_url.as_str()).await?.0
+                    } else {
+                        return Err(anyhow::anyhow!("failed to connect to {} and discovery failed", relay_url));
+                    }
+                }
+            }
+        };
+
         info!("connected to relay ✓");
         if let Some(tx) = &self.event_tx {
-            let _ = tx.send(AgentEvent::Connected);
+            let _ = tx.send(AgentEvent::Connected { relay_url: relay_url.clone() });
         }
+        self.run_event_loop(ws).await
+    }
 
+    /// Shared WebSocket event loop used by both relay client and P2P server mode.
+    async fn run_event_loop<S>(&self, ws: tokio_tungstenite::WebSocketStream<S>) -> anyhow::Result<()>
+    where
+        S: tokio::io::AsyncRead + tokio::io::AsyncWrite + Unpin + Send + 'static,
+    {
         let (mut sink, mut stream) = ws.split();
         let (out_tx, mut out_rx) = mpsc::unbounded_channel::<String>();
         let codec = Codec::new();
@@ -81,12 +164,6 @@ impl Agent {
         // Set up TaskManager
         let (res_tx, mut res_rx) = mpsc::unbounded_channel();
         let (task_queue, task_rx) = dos_task_manager::TaskQueue::new(100);
-        
-        let mut registry = dos_task_manager::TaskRegistry::new();
-        // Register agent ping task
-        registry.register("ping", |req| {
-            Ok(Box::new(dos_task_manager::PingTask::with_id(req.task_id.0)))
-        });
 
         let context = dos_task_manager::TaskContext {
             node_id: self.identity.node_id,
@@ -119,58 +196,73 @@ impl Agent {
         });
 
         // Send initial heartbeat immediately (relay uses it to identify us)
-        self.send_heartbeat(&out_tx)?;
+        let capabilities = self.registry.get_capabilities();
+        self.send_heartbeat(&out_tx, capabilities.clone())?;
 
-        // Heartbeat task: sends every HEARTBEAT_INTERVAL_SECS
-        let hb_tx = out_tx.clone();
+        // Track heartbeat acknowledgments to detect half-open sockets
+        let last_ack = std::sync::Arc::new(tokio::sync::Mutex::new(chrono::Utc::now()));
+        let last_ack_clone = last_ack.clone();
         let node_id = NodeId(self.identity.node_id);
-        let platform = self.platform.clone();
-        // let _version = self.config.relay_url.clone(); // removed
-        let heartbeat_task = tokio::spawn(async move {
-            let mut interval =
-                tokio::time::interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
-            interval.tick().await; // skip first (already sent above)
-            loop {
-                interval.tick().await;
-                let payload = make_payload(&platform);
-                let msg = heartbeat(node_id, payload);
-                if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
-                    hb_tx.send(json).ok();
-                }
-            }
-        });
+        
+        let mut hb_interval = tokio::time::interval(Duration::from_secs(HEARTBEAT_INTERVAL_SECS));
+        hb_interval.tick().await; // skip first (already sent above)
 
-        // Request device list after 500ms (give relay time to register us)
-        {
-            let dl_tx = out_tx.clone();
-            let node_id = NodeId(self.identity.node_id);
-            tokio::spawn(async move {
-                tokio::time::sleep(Duration::from_millis(500)).await;
-                let msg = device_list_request(node_id);
-                if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
-                    dl_tx.send(json).ok();
+        loop {
+            tokio::select! {
+                res = stream.next() => {
+                    match res {
+                        Some(Ok(WsMsg::Text(text))) => {
+                            match codec.decode(&text) {
+                                Ok(envelope) => {
+                                    if matches!(envelope.message, Message::HeartbeatAck) {
+                                        let mut ack = last_ack_clone.lock().await;
+                                        *ack = chrono::Utc::now();
+                                    } else {
+                                        self.handle_message(envelope.message, &out_tx, &task_queue, &self.registry).await;
+                                    }
+                                }
+                                Err(e) => warn!(error = %e, "decode error"),
+                            }
+                        }
+                        Some(Ok(_)) => {} // ignore other WS frames
+                        Some(Err(e)) => {
+                            error!(error = %e, "read error on stream");
+                            break;
+                        }
+                        None => {
+                            info!("connection closed by remote peer");
+                            break;
+                        }
+                    }
                 }
-            });
-        }
-
-        // Main read loop
-        while let Some(Ok(WsMsg::Text(text))) = stream.next().await {
-            match codec.decode(&text) {
-                Ok(envelope) => self.handle_message(envelope.message, &out_tx, &task_queue, &registry).await,
-                Err(e) => warn!(error = %e, "decode error"),
+                _ = hb_interval.tick() => {
+                    let elapsed = {
+                        let last = last_ack_clone.lock().await;
+                        chrono::Utc::now().signed_duration_since(*last)
+                    };
+                    if elapsed.num_seconds() > (HEARTBEAT_INTERVAL_SECS * 2 + 5) as i64 {
+                        error!("No heartbeat acknowledgment received for {} seconds — closing connection", elapsed.num_seconds());
+                        break;
+                    }
+                    
+                    let payload = make_payload(&self.platform, capabilities.clone());
+                    let msg = heartbeat(node_id, payload);
+                    if let Ok(json) = Codec::new().encode(&Envelope::new(msg)) {
+                        out_tx.send(json).ok();
+                    }
+                }
             }
         }
 
         write_task.abort();
-        heartbeat_task.abort();
         dispatcher_task.abort();
         result_task.abort();
         Ok(())
     }
 
-    fn send_heartbeat(&self, tx: &mpsc::UnboundedSender<String>) -> anyhow::Result<()> {
+    fn send_heartbeat(&self, tx: &mpsc::UnboundedSender<String>, capabilities: Vec<dos_core::Capability>) -> anyhow::Result<()> {
         let node_id = NodeId(self.identity.node_id);
-        let payload = make_payload(&self.platform);
+        let payload = make_payload(&self.platform, capabilities);
         let msg = heartbeat(node_id, payload);
         let json = Codec::new().encode(&Envelope::new(msg))?;
         tx.send(json)?;
@@ -261,7 +353,7 @@ impl Agent {
     }
 }
 
-fn make_payload(platform: &Platform) -> HeartbeatPayload {
+fn make_payload(platform: &Platform, capabilities: Vec<dos_core::Capability>) -> HeartbeatPayload {
     HeartbeatPayload {
         cpu_usage: 0.0,
         memory_usage: 0.0,
@@ -269,6 +361,7 @@ fn make_payload(platform: &Platform) -> HeartbeatPayload {
         platform: platform.clone(),
         version: env!("CARGO_PKG_VERSION").into(),
         status: NodeStatus::Online,
+        capabilities,
         timestamp: Utc::now(),
     }
 }

@@ -43,8 +43,10 @@ pub async fn handle_connection(
         }
     });
 
+    let connection_id = uuid::Uuid::new_v4();
+
     // Wait for the first heartbeat (identification within 10 seconds)
-    let node_id = match identify(&mut stream, &registry, tx.clone()).await {
+    let node_id = match identify(&mut stream, &registry, tx.clone(), connection_id).await {
         Some(id) => id,
         None => {
             warn!(peer = %peer, "node did not send heartbeat — dropping");
@@ -53,7 +55,7 @@ pub async fn handle_connection(
         }
     };
 
-    info!(peer = %peer, %node_id, "node identified and registered");
+    info!(peer = %peer, %node_id, %connection_id, "node identified and registered");
 
     // Main message loop
     while let Some(Ok(WsMsg::Text(text))) = stream.next().await {
@@ -61,8 +63,8 @@ pub async fn handle_connection(
     }
 
     // Cleanup
-    registry.remove(node_id).await;
-    info!(%node_id, "node disconnected");
+    registry.remove(node_id, connection_id).await;
+    info!(%node_id, %connection_id, "node disconnected");
     write_task.abort();
 }
 
@@ -71,6 +73,7 @@ async fn identify(
     stream: &mut (impl StreamExt<Item = Result<WsMsg, tokio_tungstenite::tungstenite::Error>> + Unpin),
     registry: &Arc<Registry>,
     tx: NodeTx,
+    connection_id: uuid::Uuid,
 ) -> Option<NodeId> {
     let codec = Codec::new();
     // Give the client 10 seconds to send its first heartbeat
@@ -90,15 +93,23 @@ async fn identify(
 
     match envelope.message {
         Message::Heartbeat { from, ref payload } => {
-            let name = format!("node-{}", &from.to_string()[..8]);
+            let platform_name = match payload.platform {
+                dos_core::Platform::Mac => "Mac Node",
+                dos_core::Platform::Android => "Android Device",
+                dos_core::Platform::Windows => "Windows Node",
+                dos_core::Platform::Linux => "Linux Node",
+                _ => "Node",
+            };
+            let name = format!("{} ({})", platform_name, &from.to_string()[..8]);
             registry
                 .upsert_from_heartbeat(
                     from,
                     name,
                     payload.platform.clone(),
-                    vec![],
+                    payload.capabilities.clone(),
                     payload,
                     tx,
+                    connection_id,
                 )
                 .await;
             Some(from)
@@ -111,7 +122,7 @@ async fn identify(
 }
 
 /// Dispatch a decoded message from a known node.
-async fn dispatch(text: &str, from: NodeId, registry: &Arc<Registry>, tx: &NodeTx) {
+async fn dispatch(text: &str, _from: NodeId, registry: &Arc<Registry>, tx: &NodeTx) {
     let codec = Codec::new();
     let envelope = match codec.decode(text) {
         Ok(e) => e,
@@ -124,6 +135,7 @@ async fn dispatch(text: &str, from: NodeId, registry: &Arc<Registry>, tx: &NodeT
     match envelope.message {
         Message::Heartbeat { from: node_id, ref payload } => {
             registry.update_heartbeat(node_id, payload).await;
+            send_msg(tx, Message::HeartbeatAck);
         }
 
         Message::DeviceListRequest(_) => {

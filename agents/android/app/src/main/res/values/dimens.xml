@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing -->
+    <dimen name="spacing_xxs">2dp</dimen>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">12dp</dimen>
+    <dimen name="spacing_lg">16dp</dimen>
+    <dimen name="spacing_xl">20dp</dimen>
+    <dimen name="spacing_xxl">24dp</dimen>
+    <dimen name="spacing_xxxl">32dp</dimen>
+
+    <!-- Corner radius -->
+    <dimen name="corner_xs">4dp</dimen>
+    <dimen name="corner_sm">6dp</dimen>
+    <dimen name="corner_md">8dp</dimen>
+    <dimen name="corner_lg">12dp</dimen>
+    <dimen name="corner_xl">16dp</dimen>
+    <dimen name="corner_xxl">20dp</dimen>
+    <dimen name="corner_full">999dp</dimen>
+
+    <!-- Touch targets -->
+    <dimen name="touch_target">48dp</dimen>
+    <dimen name="touch_min">48dp</dimen>
+    <dimen name="touch_icon">40dp</dimen>
+    <dimen name="touch_small">32dp</dimen>
+    <dimen name="big_button_icon">28dp</dimen>
+    <dimen name="device_avatar_size">40dp</dimen>
+
+    <!-- Card -->
+    <dimen name="card_elevation">0dp</dimen>
+    <dimen name="card_padding">16dp</dimen>
+
+    <!-- Bottom nav -->
+    <dimen name="bottom_nav_height">80dp</dimen>
+
+    <!-- Progress -->
+    <dimen name="progress_height">4dp</dimen>
+    <dimen name="progress_height_thin">2dp</dimen>
+
+    <!-- Font sizes -->
+    <dimen name="text_xs">10sp</dimen>
+    <dimen name="text_sm">11sp</dimen>
+    <dimen name="text_md">12sp</dimen>
+    <dimen name="text_lg">13sp</dimen>
+    <dimen name="text_p">14sp</dimen>
+    <dimen name="text_title">15sp</dimen>
+    <dimen name="text_button">14sp</dimen>
+    <dimen name="text_heading">18sp</dimen>
+    <dimen name="text_large_heading">24sp</dimen>
+</resources>

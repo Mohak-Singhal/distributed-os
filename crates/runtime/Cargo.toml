@@ -14,6 +14,7 @@ dos-protocol     = { workspace = true }
 dos-networking   = { workspace = true }
 dos-task-manager = { workspace = true }
 dos-crypto       = { workspace = true }
+dos-discovery    = { workspace = true }
 tokio            = { workspace = true }
 tracing          = { workspace = true }
 anyhow           = { workspace = true }

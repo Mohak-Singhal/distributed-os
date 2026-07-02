@@ -1,0 +1,188 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Avatar Section (vertically chained & centered)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <ImageView
+        android:id="@+id/progressFromAvatar"
+        android:layout_width="@dimen/device_avatar_size"
+        android:layout_height="@dimen/device_avatar_size"
+        android:layout_marginTop="@dimen/spacing_xxl"
+        android:importantForAccessibility="no"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@id/progressFromName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:layout_constraintVertical_bias="0.35" />
+
+    <TextView
+        android:id="@+id/progressFromName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="@dimen/text_p"
+        app:layout_constraintTop_toBottomOf="@id/progressFromAvatar"
+        app:layout_constraintBottom_toTopOf="@id/progressArrow"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="My Device" />
+
+    <ImageView
+        android:id="@+id/progressArrow"
+        android:layout_width="@dimen/touch_small"
+        android:layout_height="@dimen/touch_small"
+        android:layout_marginTop="@dimen/spacing_sm"
+        android:layout_marginBottom="@dimen/spacing_sm"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_arrow_down"
+        app:tint="?attr/colorOnSurfaceVariant"
+        app:layout_constraintTop_toBottomOf="@id/progressFromName"
+        app:layout_constraintBottom_toTopOf="@id/progressToAvatar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <ImageView
+        android:id="@+id/progressToAvatar"
+        android:layout_width="@dimen/device_avatar_size"
+        android:layout_height="@dimen/device_avatar_size"
+        android:importantForAccessibility="no"
+        app:layout_constraintTop_toBottomOf="@id/progressArrow"
+        app:layout_constraintBottom_toTopOf="@id/progressToName"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <TextView
+        android:id="@+id/progressToName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:fontFamily="sans-serif-medium"
+        android:gravity="center"
+        android:singleLine="true"
+        android:ellipsize="end"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="@dimen/text_p"
+        app:layout_constraintTop_toBottomOf="@id/progressToAvatar"
+        app:layout_constraintBottom_toTopOf="@id/progressFileList"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:text="Target Device" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         File List (takes remaining space)
+         ═══════════════════════════════════════════════════════════ -->
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/progressFileList"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/spacing_lg"
+        android:clipToPadding="false"
+        android:nestedScrollingEnabled="false"
+        android:paddingBottom="@dimen/spacing_sm"
+        app:layout_constraintTop_toBottomOf="@id/progressToName"
+        app:layout_constraintBottom_toTopOf="@id/progressOverallSection"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        tools:listitem="@layout/transfer_item" />
+
+    <!-- ═══════════════════════════════════════════════════════════
+         Bottom Progress Section
+         ═══════════════════════════════════════════════════════════ -->
+
+    <LinearLayout
+        android:id="@+id/progressOverallSection"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerHigh"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:padding="@dimen/spacing_lg"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <!-- Progress indicator + overall text row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/progressOverallCircle"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:indeterminate="false"
+                android:max="100"
+                android:progress="0"
+                app:indicatorColor="?attr/colorPrimary"
+                app:indicatorSize="36dp"
+                app:trackColor="?attr/colorSurfaceVariant"
+                app:trackThickness="4dp" />
+
+            <TextView
+                android:id="@+id/progressOverallText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="@dimen/spacing_md"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="@dimen/text_p"
+                tools:text="2/5 files - 45%" />
+        </LinearLayout>
+
+        <!-- Speed & ETA row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/spacing_sm"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/progressSpeedText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="@dimen/text_sm"
+                tools:text="12.5 MB/s" />
+
+            <TextView
+                android:id="@+id/progressEtaText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="@dimen/text_sm"
+                tools:text="~30s remaining" />
+        </LinearLayout>
+
+        <!-- Cancel / Close button -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/progressCancelBtn"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="@dimen/spacing_md"
+            android:text="Cancel" />
+
+    </LinearLayout>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

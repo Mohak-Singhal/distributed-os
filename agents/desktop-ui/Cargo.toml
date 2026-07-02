@@ -1,0 +1,46 @@
+[package]
+name = "dos-desktop-ui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+rust-version.workspace = true
+description = "Native Rust desktop GUI for PDOS — Dashboard, File Explorer, Screen Mirror, Settings"
+
+[[bin]]
+name = "dos-ui"
+path = "src/main.rs"
+
+[dependencies]
+dos-common       = { workspace = true }
+dos-core         = { workspace = true }
+dos-protocol     = { workspace = true }
+dos-crypto       = { workspace = true }
+dos-networking   = { workspace = true }
+dos-discovery    = { workspace = true }
+dos-runtime      = { workspace = true }
+tokio            = { workspace = true }
+tracing          = { workspace = true }
+tracing-subscriber = { workspace = true }
+anyhow           = { workspace = true }
+futures-util     = { workspace = true }
+uuid             = { workspace = true }
+serde            = { workspace = true }
+serde_json       = { workspace = true }
+chrono           = { workspace = true }
+mdns-sd          = "0.20.0"
+
+# GUI
+egui             = "0.31"
+eframe           = "0.31"
+egui-wgpu        = "0.31"
+
+# WebSocket
+tokio-tungstenite = { workspace = true }
+
+# File transfer
+tokio-util       = { version = "0.7", features = ["io"] }
+bytes            = "1"
+
+# System
+sysinfo          = "0.36"

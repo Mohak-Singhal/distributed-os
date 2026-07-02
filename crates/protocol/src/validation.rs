@@ -122,6 +122,7 @@ mod tests {
                 platform: Platform::Mac,
                 version: "0.1.0".into(),
                 status: NodeStatus::Online,
+                capabilities: vec![],
                 timestamp: Utc::now(),
             },
         }
@@ -143,6 +144,7 @@ mod tests {
                 platform: Platform::Linux,
                 version: "".into(),
                 status: NodeStatus::Online,
+                capabilities: vec![],
                 timestamp: Utc::now(),
             },
         };
@@ -160,6 +162,7 @@ mod tests {
                 platform: Platform::Linux,
                 version: "0.1.0".into(),
                 status: NodeStatus::Online,
+                capabilities: vec![],
                 timestamp: Utc::now(),
             },
         };
@@ -170,6 +173,7 @@ mod tests {
     fn pair_request_bad_pubkey_fails() {
         let msg = Message::PairRequest(PairRequest {
             from: NodeId::new_random(),
+            to: NodeId::new_random(),
             name: "Test".into(),
             public_key: "not-a-key".into(),
             capabilities: vec![Capability::Compute],
@@ -182,6 +186,7 @@ mod tests {
     fn pair_request_empty_name_fails() {
         let msg = Message::PairRequest(PairRequest {
             from: NodeId::new_random(),
+            to: NodeId::new_random(),
             name: "   ".into(),
             public_key: "a".repeat(64),
             capabilities: vec![],

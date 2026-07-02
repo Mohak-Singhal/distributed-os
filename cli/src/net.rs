@@ -2,11 +2,7 @@ use chrono::Utc;
 use dos_common::config::Config;
 use dos_core::{NodeStatus, Platform};
 use dos_networking::{Connection, WsConnection};
-use dos_protocol::{
-    builder::heartbeat,
-    ids::NodeId,
-    message::HeartbeatPayload,
-};
+use dos_protocol::{builder::heartbeat, ids::NodeId, message::HeartbeatPayload};
 use uuid::Uuid;
 
 pub async fn connect_and_identify() -> anyhow::Result<(WsConnection, NodeId)> {
@@ -21,6 +17,7 @@ pub async fn connect_and_identify() -> anyhow::Result<(WsConnection, NodeId)> {
         platform: Platform::Mac, // Or detect platform if we want, Mac is fine for CLI
         version: env!("CARGO_PKG_VERSION").into(),
         status: NodeStatus::Online,
+        capabilities: vec![],
         timestamp: Utc::now(),
     };
 

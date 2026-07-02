@@ -16,3 +16,6 @@ tokio          = { workspace = true }
 tracing        = { workspace = true }
 thiserror      = { workspace = true }
 async-trait    = "0.1"
+anyhow         = { workspace = true }
+mdns-sd        = "0.13"
+uuid           = { workspace = true, features = ["v4"] }
